@@ -1,0 +1,35 @@
+# Bind command example
+Print coordinates
+*.fits
+bind n
+bash ../up_limits.sh
+
+Print coordinates
+*.fits
+bind m
+bash ../down_limits.sh
+
+# Bind command example
+Print coordinates
+*.fits
+bind d
+xpaset -p ds9 cube next
+
+# Bind command example
+Print coordinates
+*.fits
+bind s
+xpaset -p ds9 cube stop
+
+# Bind command example
+Print coordinates
+*.fits
+bind a
+xpaset -p ds9 cube prev
+
+# Bind command example
+Print coordinates
+*.fits
+bind x
+xpaset -p ds9 cube play
+
