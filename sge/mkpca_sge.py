@@ -1,0 +1,77 @@
+#!/usr/bin/env python
+import os
+import sys
+import numpy as np
+import argparse
+
+header="""#!/bin/bash
+#$ -cwd
+hostname
+"""
+
+cmd="""
+python {exec_path}/pca_sky6.py --sky_kappa={sky_kappa} --ncomp={ncomp} -i {ifu} -a LL LU -b LU --shotlist_pca {shotlist_pca} --shotlist_skyrecon {shotlist_skyrecon} --dir_rebin {dir_rebin}
+python {exec_path}/pca_sky6.py --sky_kappa={sky_kappa} --ncomp={ncomp} -i {ifu} -a LL LU -b LL --shotlist_pca {shotlist_pca} --shotlist_skyrecon {shotlist_skyrecon} --dir_rebin {dir_rebin}
+python {exec_path}/pca_sky6.py --sky_kappa={sky_kappa} --ncomp={ncomp} -i {ifu} -a RL RU -b RU --shotlist_pca {shotlist_pca} --shotlist_skyrecon {shotlist_skyrecon} --dir_rebin {dir_rebin}
+python {exec_path}/pca_sky6.py --sky_kappa={sky_kappa} --ncomp={ncomp} -i {ifu} -a RL RU -b RU --shotlist_pca {shotlist_pca} --shotlist_skyrecon {shotlist_skyrecon} --dir_rebin {dir_rebin}"""
+
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-i', '--ifulistfile', default="ifulist_COSMOSA.txt", type=str)
+parser.add_argument('-r', '--dir_rebin', default="/scratch/04287/mxhf/rebin2", type=str)
+parser.add_argument('-p', '--shotlist_pca', default="/data/hetdex/u/mxhf/cubes/shotlist_PCA_COSMOSA.txt", type=str)
+parser.add_argument('-t', '--shotlist_skyrecon', default="/data/hetdex/u/mxhf/cubes/shotlist_COSMOSA.txt", type=str)
+parser.add_argument('-k', '--sky_kappa', default=5., type=float)
+parser.add_argument('-n', '--ncomp', default=20, type=int)
+parser.add_argument('-s', '--sge_dir', default='sge', type=str)
+parser.add_argument('-N', '--njobs', default=48, type=int)
+parser.add_argument('-e', '--exec_path', default="/data/hetdex/u/mxhf/cubes/xpca", type=str)
+
+args = parser.parse_args()
+
+ifulistfile = args.ifulistfile
+dir_rebin = args.dir_rebin
+shotlist_pca = args.shotlist_pca
+shotlist_skyrecon = args.shotlist_skyrecon
+sky_kappa = args.sky_kappa
+ncomp = args.ncomp
+sge_dir = args.sge_dir
+
+exec_path = args.exec_path
+
+print(exec_path)
+
+if not os.path.exists(args.sge_dir):
+    os.mkdir(args.sge_dir)
+
+ifus = []
+def loadlist(listfile):
+    li = []
+    with open(listfile,'r') as f:
+        ll = f.readlines()
+    for l in ll:
+        li.append(l.strip())
+    return li
+
+ifus = loadlist(ifulistfile)
+
+worklist = []
+for i in ifus:
+    worklist.append(i)
+
+N = len(worklist)
+ii = np.arange(N)
+iii = np.array_split(ii,int(args.njobs))
+
+print("Distributing {} ifus over {} jobs.".format(N,len(iii)))
+for j,ii in enumerate(iii):
+    runfile="run_pca_{:04d}.sh".format(j)
+    path = os.path.join(sge_dir,runfile)
+    with open(path, 'w') as f:
+        f.write(header)
+        for i in ii:
+            ifu = worklist[i]
+            f.write(cmd.format(exec_path = exec_path, ifu = ifu, dir_rebin = dir_rebin, shotlist_pca = shotlist_pca, shotlist_skyrecon = shotlist_skyrecon, sky_kappa = sky_kappa, ncomp = ncomp) + "\n")
+        print("Writing {}".format( path ) )
+
