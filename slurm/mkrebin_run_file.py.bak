@@ -1,0 +1,32 @@
+
+import sys
+
+
+shotlistfile = "shotlist_pca_COSMOSA.txt"
+ifulistfile = "ifulist_COSMOSA.txt"
+shots = []
+def loadlist(listfile):
+    li = []
+    with open(listfile,'r') as f:
+        ll = f.readlines()
+    for l in ll:
+        li.append(l.strip())
+    return li
+
+shots = loadlist(shotlistfile)
+ifus = loadlist(ifulistfile)
+
+with open("run_rebin_hdf5.slurm",'r') as g:
+    s = g.read()
+
+f = None
+j = 0
+for i in range( len(shots) ):
+    for k in range( len(ifus) ):
+        s = s.replace("@@@CMD@@@",cmd.format(ifu=ifus[k],shot=shots[i]))
+        fn = "run_rebin_hdf5_{:04d}.slurm".format(j)
+        j += 1
+        with open(fn,'w') as g:
+            print("writing ", fn)
+            g.write(s)
+
