@@ -6,8 +6,11 @@ import numpy as np
 cmd="python3 ../../src/hetdex_cube/rebin_hdf5.py -s {shot}"
 slurmtempl="run_rebin_hdf5.slurm"
 #shotlistfile = "shotlist_PCA_COSMOSABCD_missing.txt"
-shotlistfile = "shotlist_PCA_GOODSN.txt"
-slurmsdir = "slurms3"
+shotlistfile = "shotlist_2018_missing.txt"
+slurmsdir = "slurms_shotlist_2018_missing"
+
+if not os.path.exists(slurmsdir):
+    os.mkdir(slurmsdir)
 
 shots = []
 def loadlist(listfile):
