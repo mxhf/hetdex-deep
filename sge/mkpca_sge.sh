@@ -1,0 +1,5 @@
+python mkpca_sge.py -i ifulist_COSMOSA.txt -r /data/hetdex/u/mxhf/cubes/rebin2 -p /data/hetdex/u/mxhf/cubes/shotlist_PCA_COSMOSA.txt -t /data/hetdex/u/mxhf/cubes/shotlist_COSMOSA.txt -k 5. -n 20 -s sge_PCA_COSMOSA -N 12
+python mkpca_sge.py -i ifulist_COSMOSB.txt -r /data/hetdex/u/mxhf/cubes/rebin2 -p /data/hetdex/u/mxhf/cubes/shotlist_PCA_COSMOSB.txt -t /data/hetdex/u/mxhf/cubes/shotlist_COSMOSB.txt -k 5. -n 25 -s sge_PCA_COSMOSB -N 12
+python mkpca_sge.py -i ifulist_COSMOSC.txt -r /data/hetdex/u/mxhf/cubes/rebin2 -p /data/hetdex/u/mxhf/cubes/shotlist_PCA_COSMOSC.txt -t /data/hetdex/u/mxhf/cubes/shotlist_COSMOSC.txt -k 5. -n 25 -s sge_PCA_COSMOSC -N 12
+python mkpca_sge.py -i ifulist_COSMOSD.txt -r /data/hetdex/u/mxhf/cubes/rebin2 -p /data/hetdex/u/mxhf/cubes/shotlist_PCA_COSMOSD.txt -t /data/hetdex/u/mxhf/cubes/shotlist_COSMOSD.txt -k 5. -n 25 -s sge_PCA_COSMOSD -N 12
+python mkpca_sge.py -i ifulist_GOODSN.txt  -r /data/hetdex/u/mxhf/cubes/rebin2 -p /data/hetdex/u/mxhf/cubes/shotlist_PCA_GOODSN.txt  -t /data/hetdex/u/mxhf/cubes/shotlist_GOODSN.txt -k 5. -n 25   -s sge_PCA_GOODSN -N 12
