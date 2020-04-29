@@ -3,11 +3,11 @@ import os
 import sys
 import numpy as np
 
-cmd="python3 ../../src/hetdex_cube/rebin_hdf5.py -s {shot}"
+cmd="python3 /home1/04287/mxhf/hetdex/hetdex_cube/rebin_hdf5.py -s {shot}"
 slurmtempl="run_rebin_hdf5.slurm"
 #shotlistfile = "shotlist_PCA_COSMOSABCD_missing.txt"
-shotlistfile = "shotlist_2018_missing.txt"
-slurmsdir = "slurms_shotlist_2018_missing"
+shotlistfile = "shotlist_2019_missing.txt"
+slurmsdir = "slurms_shotlist_2019_missing"
 
 if not os.path.exists(slurmsdir):
     os.mkdir(slurmsdir)
@@ -33,6 +33,8 @@ iii = np.array_split(ii,int(48))
 
 print("Distributing {} tasks over {} jobs.".format(N,len(iii)))
 for j,ii in enumerate(iii):
+    if len(ii) == 0:
+        continue
     runfile="run_rebin_hdf5_{:04d}.run".format(j)
     with open(slurmtempl, 'r') as f:
         s = f.read()
