@@ -35,6 +35,7 @@ import os
 import pickle
 
 from scipy.interpolate import interp1d
+from scipy.ndimage.filters import gaussian_filter
 
 from astropy.io import ascii
 from collections import OrderedDict
@@ -91,6 +92,8 @@ def register_ds9staircase():
     register_cmap('ds9staircase', data=ds9staircase)
 
 register_ds9staircase()
+
+
 
 # simple continuum removal though spline interpolation
 def confitSpl(wls, s, n = 10, kappaL=2.5, kappaU=2.5, output_fit=False, smooth=0., mask=None, PLOT=False, maxiter=15):
@@ -166,6 +169,8 @@ def confitSpl(wls, s, n = 10, kappaL=2.5, kappaU=2.5, output_fit=False, smooth=0
         return sc,c
     else:
         return sc
+    
+    
 
 def line_detect(ww, csout, threshold):
     # line detection (everything above cetain threshold)
@@ -192,8 +197,12 @@ def line_detect(ww, csout, threshold):
 def masked_biweight(cube_slice, mask):
     return biweight_location( cube_slice[mask] )
 
+
+
 def masked_sum(cube_slice, mask):
     return np.sum( cube_slice[mask] )
+
+
 
 def extract(r, s, outmap, method=masked_biweight):
     mask = np.sum( outmap == r['id'], axis=0) > 0
@@ -207,6 +216,8 @@ def extract(r, s, outmap, method=masked_biweight):
 
     ww = s.grid()
     return ww,sout, mask
+
+
 
 def nextract(r, s, outmap, MAX_SAMPLES = 10):
     """
@@ -339,6 +350,8 @@ if False:
     plt.fill_between(ww, 2.*mm, -2.*mm,alpha=0.3, edgecolor='black', facecolor='grey')
     plt.fill_between(ww, mm, -mm,alpha=0.3, edgecolor='black', facecolor='grey')
 
+    
+    
 def object_description(r):
     s = ""
     uu = [str(r.columns[c].unit) for c in r.columns]
@@ -346,6 +359,8 @@ def object_description(r):
         s += "{:8s} {} [{}]\n".format(n, r[n], u)
 
     return(s)
+
+
 
 def identify_lines(wldetect, lineset, dlineset, flinelist):
     # detected line must be first line in list
@@ -368,11 +383,10 @@ def identify_lines(wldetect, lineset, dlineset, flinelist):
     s = ""
 
 
-
     for r in t:
         if r["z_0"] < 0.:
             continue
-        s += "If line {:.2f}A is [{:12s}] at rest. wl = {:.1f}A (z = {:.3f})\n".format(_lineset[0], r["species"], r["wl[A]"], r["z_0"])
+        s += "If {:.2f}A is [{:12s}] @ restwl = {:.1f}A (z = {:.2f})\n".format(_lineset[0], r["species"], r["wl[A]"], r["z_0"])
         for i in range(1, len(_lineset)):
             if i == idetect:
                 continue
@@ -386,15 +400,17 @@ def identify_lines(wldetect, lineset, dlineset, flinelist):
                 dv = dA/lineset[i] * 3e5
                 #z = _r["wl[A]"]
                 z = _lineset[i]/_r["wl[A]"] - 1.
-                s += " {:.2f} could be [{:12s}] @ rest_wl. {}, wl_obs(z={:.3f})={:.2f}A, dA={:.2f}A, dv={:.2f}kms, z={:.3f}\n".format(_lineset[i], _r["species"], _r["wl[A]"],r["z_0"],obswl, dA, dv, z)
+                s += " {:.2f} could be [{:12s}] @ restwl {}, \n  wl_obs(z={:.2f})={:.2f}A, dA={:.2f}A, dv={:.2f}kms, z={:.2f}\n".format(_lineset[i], _r["species"], _r["wl[A]"],r["z_0"],obswl, dA, dv, z)
     return s
+
 
 def draw_line(ax, wl, label):
     ymin,ymax = ax.get_ylim()
     ax.text(wl-5.,ymax, label, rotation=90., ha='right', size=10, va='top')
     ax.plot([wl]*2,[0.,.7], c='grey', lw=1., zorder=0)
 
-def show_cog(ax1, ax2, ax3, ax4, s, r, max_cog_radius = 7.5, max_cut_radius = 12., wl_extent=75.):
+    
+def show_cog(ax1, ax2, ax3, ax4, field, s, r, max_cog_radius = 7.5, max_cut_radius = 12., wl_extent=75.):
     x_com, y_com, z_com, wl_com = r["x_com"], r["y_com"],  r["z_com"], r["wl_com"]
     #print("x_com, y_com, z_com, wl_com : ", x_com, y_com, z_com, wl_com)
     hdu = s.hdu
@@ -418,9 +434,17 @@ def show_cog(ax1, ax2, ax3, ax4, s, r, max_cog_radius = 7.5, max_cut_radius = 12
         cog.append([r*pixelscale,flux])
 
     cog = np.array(cog)
-    ax1.plot(cog[:,0], cog[:,1],'x')
+    ax1.plot(cog[:,0], cog[:,1]/np.max(cog[:,1]),'x')
     ax1.set_xlabel("r [arcsec]")
     ax1.set_ylabel("cum. flux [arb]")
+    
+    
+    tcal = ascii.read("specphot/cog_{}.txt".format(field), format="fixed_width")
+    ax1.plot( tcal["r"], tcal["EE"] ,'-', c='b', alpha=0.5)
+    
+    ax1.set_xlim([0.,max_cog_radius])
+    
+    
 
 
     #c[iz,:,ix]
@@ -492,6 +516,7 @@ if False:
     show_cog(ax1, ax2, ax3, ax4, s, r, max_cog_radius=r["diam"])
     f.tight_layout()
 
+    
 def query_simbad(ra,dec,radius):
     fcache = "simbad_cache/{:.6f}_{:.6f}_{:.6f}.pickle".format(ra,dec,radius)
     customSimbad = Simbad()
@@ -538,7 +563,10 @@ radius = 1./60 # HET has a 22 armin FoV, do r=12 to be save
 
 simbad_catalog = query_simbad(ra,dec,radius)
 
-def show_image(ax, r, hdu, w, title, width = 20./3600., AXLABELS=True, simbad_catalog=[], vmin=-2.e-5,vmax=10.):
+
+
+
+def show_image(ax, r, hdu, w, title, width = 20./3600., AXLABELS=True, photz_catalog=[], vmin=-2.e-5,vmax=10.):
     ra,dec = r["ra_com"], r["dec_com"]
     cos_term = np.cos(np.deg2rad(dec))
     #cos_term=1.
@@ -557,11 +585,22 @@ def show_image(ax, r, hdu, w, title, width = 20./3600., AXLABELS=True, simbad_ca
     ax.set_xlabel("RA")
     ax.set_ylabel("Dec")
 
-    for source in simbad_catalog:
-        x,y = w.wcs_world2pix(source[1],source[2],0)
-        plt.imshow(hdu.data, vmin=vmin, vmax=vmax, origin='lower', interpolation='nearest')
-        plt.plot([x],[y],'o',c='None', ms=5, markeredgecolor='white')
-        plt.text(x+2.,y+2., "z={:.3f}".format(source[3]), color='white')
+    print("len(source)", len(photz_catalog))
+    
+    
+    
+    plt.imshow(hdu.data, vmin=vmin, vmax=vmax, origin='lower', interpolation='nearest')
+    xlim = plt.xlim()
+    ylim = plt.ylim()    
+    
+    if photz_catalog != []:
+        xx,yy = w.wcs_world2pix(photz_catalog["ra"],photz_catalog["dec"],0)
+        zz = photz_catalog["z"]
+        ii = (xx >= xlim[0]) * (xx <= xlim[1]) * (yy >= ylim[0]) * (yy <= ylim[1])
+        plt.plot(xx[ii],yy[ii],'o',c='None', ms=5, markeredgecolor='white')
+
+        for x,y,z in zip(xx[ii],yy[ii],zz[ii]):
+            plt.text(x+2.,y+2., "z={:.3f}".format(z), color='white',fontsize=6)
 
     if not AXLABELS:
         ra = ax.coords[0]
@@ -606,6 +645,8 @@ if False:
     show_image(ax, r, hdu, w, "", width = width, AXLABELS=True)
     f.tight_layout()
 
+    
+   
 from scipy.optimize import least_squares
 
 import numpy as np
@@ -705,6 +746,7 @@ def add_line_indicators(ax, wldetect, flinelist, candidates = [["Lyα", 1215.24,
     ax.set_xlim([xmin,xmax])
 
 def plot_spec(ax1, ax2, ww, csout, nsout, wldetect, jj, results, r, s, bad = [[5275.,5325.]]):
+    global layoutmode
     #f = plt.figure(figsize = [15,10])
     #ax1 = plt.axes()
     ax1.axvline(wldetect, c='r')
@@ -731,9 +773,11 @@ def plot_spec(ax1, ax2, ww, csout, nsout, wldetect, jj, results, r, s, bad = [[5
 
     # zoom in on detection line
     ax2.plot(ww[z1:z2], csout[z1:z2], drawstyle='steps-mid')
-    ax2.fill_between(ww[z1:z2], 5.*mm[z1:z2], -5.*mm[z1:z2],alpha=0.2, edgecolor='black', facecolor='grey')
-    ax2.fill_between(ww[z1:z2], 2.*mm[z1:z2], -2.*mm[z1:z2],alpha=0.2, edgecolor='black', facecolor='grey')
-    ax2.fill_between(ww[z1:z2], mm[z1:z2], -mm[z1:z2],alpha=0.2, edgecolor='black', facecolor='grey')
+    
+    if not layoutmode:
+        ax2.fill_between(ww[z1:z2], 5.*mm[z1:z2], -5.*mm[z1:z2],alpha=0.2, edgecolor='black', facecolor='grey')
+        ax2.fill_between(ww[z1:z2], 2.*mm[z1:z2], -2.*mm[z1:z2],alpha=0.2, edgecolor='black', facecolor='grey')
+        ax2.fill_between(ww[z1:z2], mm[z1:z2], -mm[z1:z2],alpha=0.2, edgecolor='black', facecolor='grey')
 
 
     ax2.set_ylim([-.15,.35])
@@ -750,10 +794,7 @@ def plot_spec(ax1, ax2, ww, csout, nsout, wldetect, jj, results, r, s, bad = [[5
     #yaxis.set_ticks_visible(False)
     #yaxis.set_ticklabel_visible(False)
     ax1.set_ylabel("")
-
-    #ax1.set_ylim(ylim)
-
-
+    #ax1.set_xlabel("wl[A]")
 
     if len(results) > 0:
         ii = (results[:,1] > ww[0]) * (results[:,1] < ww[-1])
@@ -763,6 +804,8 @@ def plot_spec(ax1, ax2, ww, csout, nsout, wldetect, jj, results, r, s, bad = [[5
             s = "{:.1f}A ".format(r[1],r[2] )
             #print(s)
             draw_line(ax1, r[1], s)
+            
+    ax1.set_xlim([3510.,5500.])
 
 if False:
     # test
@@ -948,8 +991,8 @@ def show_slice(ax, s, r, cal_interp, width = 20./3600., vmin=0., vmax=.5):
     ax.set_xlim([x1,x0])
     ax.set_ylim([y0,y1])
 
-    ax.set_xlabel("RA")
-    ax.set_ylabel("Dec")
+    #ax.set_xlabel("RA")
+    #ax.set_ylabel("Dec")
 
     return sl
 
@@ -992,7 +1035,7 @@ def show_collased(ax, s, r, cal_interp, width = 20./3600., vmin=0., vmax=10.):
     x,y = w.wcs_world2pix(ra,dec,0)
     ax.plot([x],[y],'x',c='white')
 
-    cb = plt.colorbar(cax)
+    cb = plt.colorbar(cax, orientation='horizontal')
     cb.set_label('10$^{-18}$erg s$^{-1}$ cm$^{2}$ arcsec$^{-2}$')
 
     ax.set_xlim([x1,x0])
@@ -1038,7 +1081,58 @@ def convert(p):
     w,h,x,y = p
     return x/1024.,  (768.-y-h)/768. , w/1024., h/768.
 
-def mk_detection_plot(field, IFU,id, r, s, sraw, ns, outmap, image_catalog, threshold, wlwin, width, cal_interp, layoutmode, SKIPERRSPEC=False, filename_appendix=""):
+
+def show_NB_image(ax, r, c, w, cal_interp, wlstart, wlend, vmin=0., vmax=5.,sigma=1.2, A_pix = 0.5**2.):
+    ww = c.grid()
+
+    ii =  ww >= wlstart
+    ii *= ww <= wlend
+    
+    #collapse slice 
+    NB = np.sum(c.data[ii], axis=0)
+    
+    wwcentral = (ww[ii][0] + ww[ii][-1] )/2.
+    wwdelta = ww[ii][-1] - ww[ii][0]
+
+    # calibrate
+
+    calim = NB * cal_interp(wwcentral) / A_pix
+    #sigma=1.5 # px = 1 arcsec
+
+    colormap = plt.get_cmap('ds9staircase')
+
+    calim[calim == 0.] = np.nan
+    colormap.set_bad(color='grey')
+
+    if sigma > 0.:
+        image = ax.imshow(gaussian_filter(calim, sigma)*1e18, vmin=vmin, vmax=vmax, origin='lower', \
+                          interpolation='nearest', cmap=colormap)    
+    else:
+        image = ax.imshow(calim*1e18, vmin=vmin, vmax=vmax, origin='lower', interpolation='nearest', cmap=colormap)
+    
+    ra,dec = r['ra_com'], r['dec_com']
+    x,y = w.wcs_world2pix(ra,dec,0)
+    
+    cbar = ax.figure.colorbar(image)
+    plt.text(.6, .97, "wl$_{{cen}}$ = {:.1f} $\AA$\n$\Delta\lambda = {:.1f}\AA$"\
+             .format(wwcentral, wwdelta), transform=ax.transAxes, color='white', va='top')
+    plt.plot(x, y, 'x',c='w')
+    cbar.set_label("10$^{-18}$ erg s$^{-1}$ arcsec$^{-2}$")
+    #cbar.set_ticks([0,.5,1.,1.5,2.])
+
+    xcoll = np.nansum(calim,axis=0)
+    ycoll = np.nansum(calim,axis=1)
+    xx = np.arange(calim.shape[1])
+    yy = np.arange(calim.shape[0])
+    ymin = np.nanmin( yy[ycoll > 0.] ) 
+    ymax = np.nanmax( yy[ycoll > 0.] ) 
+    xmin = np.nanmin( xx[xcoll > 0.] ) 
+    xmax = np.nanmax( xx[xcoll > 0.] ) 
+    ax.set_xlim([xmin, xmax])
+    ax.set_ylim([ymin, ymax]) 
+
+
+def mk_detection_plot(field, IFU, id, r, s, sraw, ns, outmap, image_catalog, threshold, wlwin, width, cal_interp, layoutmode, SKIPERRSPEC=False, filename_appendix=""):
 
     figname = "catalog_plots/{}/catalog_{}_{}.pdf".format(field,IFU,int(id),filename_appendix)
     if os.path.exists(figname):
@@ -1097,7 +1191,7 @@ def mk_detection_plot(field, IFU,id, r, s, sraw, ns, outmap, image_catalog, thre
     ax_xcut = plt.axes(convert(ax_pos["xcut"]))
     ax_ycut = plt.axes(convert(ax_pos["ycut"]))
     ax_wlcut = plt.axes(convert(ax_pos["wlcut"]))
-    show_cog(ax_cog, ax_xcut, ax_ycut, ax_wlcut, s, r, max_cog_radius=r["diam"], max_cut_radius = 12., wl_extent=75.)
+    show_cog(ax_cog, ax_xcut, ax_ycut, ax_wlcut, field, s, r, max_cog_radius=r["diam"], max_cut_radius = 12., wl_extent=75.)
 
     # spectra
     ax7 = plt.axes(convert(ax_pos["spectrum"]))
@@ -1135,24 +1229,17 @@ def mk_detection_plot(field, IFU,id, r, s, sraw, ns, outmap, image_catalog, thre
     peak_data_unsmoothed = fit_peak( ww, csout_unsmoothed,  r, wlwin )
 
     # slice through smoothed cube
-
     w = wcs.WCS(s.hdu.header)
     w = w.dropaxis(2)
     ax_slice_smoothed = plt.axes(convert(ax_pos["slice_smoothed"]), projection=w)
     ax_slice_smoothed.set_facecolor('grey')
-
     sl = show_slice(ax_slice_smoothed, s, r, cal_interp, width = width)
-
-
-    #print(ax_slice_smoothed, s, r, width)
     ax_slice_smoothed.contour(sl, transform=ax_slice_smoothed.get_transform(w),
                levels=[0.1,0.2,0.3,0.4], colors='grey', alpha=0.5)
 
     sigma = peak_data[2]/peak_data[1] * 3e5
     sinfo = "{:.2e} $erg$ $s^{{-1}}$ $cm^{{-2}}$\n$\sigma$={:.1f}km/s".format(integrated_flux_smoothed, sigma)
     ax_slice_smoothed.text(.05,.95,sinfo, color='white', transform=ax_slice_smoothed.transAxes, ha="left", va="top")
-
-    #return
 
     # slice through unsmoothed cube
     w2 = wcs.WCS(sraw.hdu.header)
@@ -1166,6 +1253,10 @@ def mk_detection_plot(field, IFU,id, r, s, sraw, ns, outmap, image_catalog, thre
     sigma = peak_data_unsmoothed[2]/peak_data_unsmoothed[1] * 3e5
     sinfo = "{:.2e} $erg$ $s^{{-1}}$ $cm^{{-2}}$\n$\sigma$={:.1f}km/s".format(integrated_flux_raw, sigma)
     ax_slice_unsmoothed.text(.05,.95,sinfo, color='white', transform=ax_slice_unsmoothed.transAxes, ha="left", va="top")
+
+    # slice through unsmoothed cube
+    ax_NB_image = plt.axes(convert(ax_pos["NB_image"]), projection=w)
+    show_NB_image(ax_NB_image, r, sraw, w, cal_interp, r['wl_com']-r['dwl']/4., r['wl_com']+r['dwl']/4.)
 
 
     # GB images
@@ -1191,9 +1282,30 @@ def mk_detection_plot(field, IFU,id, r, s, sraw, ns, outmap, image_catalog, thre
             if imcnt > 7:
                 break
 
-            simbad_catalog = []
+            photz_catalog = []
+            #simbad_catalog = []
             if imcnt == 0:
-                simbad_catalog = query_simbad(ra,dec,radius)
+                if False:
+                    # use SIMBAD
+                    simbad_catalog = query_simbad(ra,  dec, radius)
+                    cra  = [l[1] for l in simbad_catalog]
+                    cdec = [l[2] for l in simbad_catalog]
+                    cz   = [l[3] for l in simbad_catalog]
+                    
+                    photz_catalog = Table( [range(len(simbad_catalog)), cra, cdec, cz], names=["id", "ra","dec","z"] )
+                else:
+                    fncatalog = "pdz_cosmos2015_v1.3.fits"
+                    pzc = Table.read( fncatalog )
+                    photz_catalog = Table( [range(len(pzc)), pzc["RA"], pzc["DEC"], pzc["Z_MED_PDZ"]], \
+                                          names=["id", "ra","dec","z"] )
+
+
+                    ra,dec = r["ra_com"], r["dec_com"]
+                    ii  = photz_catalog["ra"] > (ra  - 1./15.)
+                    ii *= photz_catalog["ra"] < (ra  + 1./15.)
+                    ii *= photz_catalog["dec"] > (dec - 1./15.)
+                    ii *= photz_catalog["dec"] < (dec + 1./15.)
+                    photz_catalog = photz_catalog[ii]
 
 
             _w, shape, t, b = images[filename]
@@ -1208,7 +1320,7 @@ def mk_detection_plot(field, IFU,id, r, s, sraw, ns, outmap, image_catalog, thre
                 print("Setting vmax to ", vmax)
 
             show_image(ax, r, hdu, _w, title = "{} {}".format(t,b), width = width, AXLABELS=False,\
-                       simbad_catalog=simbad_catalog,vmin=vmin,vmax=vmax)
+                       photz_catalog=photz_catalog,vmin=vmin,vmax=vmax)
 
             ax.contour(sl, transform=ax.get_transform(w),
                        levels=[0.1,0.2,0.3,0.4], colors='grey', alpha=0.5)
@@ -1219,15 +1331,17 @@ def mk_detection_plot(field, IFU,id, r, s, sraw, ns, outmap, image_catalog, thre
 
 
     plt.close('all')
+    
+    
 
-def mk_detection_plots(field, IFU, image_catalog, layoutmode=True, single_id=np.nan,filename_appendix=""):
-    global wldetect, lineset, dlineset, flinelist, ax_pos
+def mk_detection_plots(field, IFU, image_catalog, ftcal, single_id=np.nan,filename_appendix=""):
+    global wldetect, lineset, dlineset, flinelist, ax_pos, layoutmode
     foutmap = "data/map_{}_{}.fits.gz".format(field, IFU)
     fincube = "data/sf2outcube_{}_{}.fits.gz".format(field, IFU)
     frawincube = "data/outcube_{}_{}.fits.gz".format(field, IFU)
     fnoisecube = "data/sf2ncoutcube_{}_{}.fits.gz".format(field, IFU)
 
-    ftcal = "mean_cal.txt"
+    
 
     # load flux calibration
     tcal = ascii.read(ftcal, format="fixed_width")
@@ -1249,7 +1363,8 @@ def mk_detection_plots(field, IFU, image_catalog, layoutmode=True, single_id=np.
         fcatalog = "data/sf2outcube_{}_{}.cat".format(field, IFU)
         t = ascii.read(fcatalog, format="ecsv")
         r = t[t['id'] == single_id][0]
-        mk_detection_plot(field, IFU,single_id, r, s, sraw, ns, outmap, image_catalog, threshold, wlwin, width, cal_interp, layoutmode,filename_appendix=filename_appendix)
+        mk_detection_plot(field, IFU,single_id, r, s, sraw, ns, outmap, image_catalog, threshold, wlwin, width, \
+                          cal_interp, layoutmode,filename_appendix=filename_appendix)
     else:
         fcatalog = "data/sf2outcube_{}_{}.pcat".format(field, IFU)
         if not os.path.exists(fcatalog):
@@ -1274,8 +1389,9 @@ def mk_detection_plots(field, IFU, image_catalog, layoutmode=True, single_id=np.
                 print("### Creating plot for source {}, number {} in {} ###".format(id, i+1, len(_t)))
                 mk_detection_plot(field, IFU,id, r, s, sraw, ns, outmap, image_catalog, threshold, wlwin, width, cal_interp, layoutmode,filename_appendix=filename_appendix)
 
-            #except Exception as e:
-            #    print("ERROR creating plot for {}: {}".format(id, str(e)))
+                
+                
+           
 
 ### keynote coordinate derived placing of subfigures
 ax_pos = {}
@@ -1294,9 +1410,14 @@ ax_pos["ycut"] = [110, 42, 149, 281]
 ax_pos["wlcut"] = [110, 37, 149, 323]
 
 
-ax_pos["line_ident"] = [409, 193, 5, 406]
-ax_pos["slice_smoothed"] = [274, 193, 471, 406]
-ax_pos["slice_unsmoothed"] = [274, 193, 751, 406]
+ax_pos["line_ident"] = [274, 237, 5, 393]
+
+ax_pos["NB_image"] = [218, 195, 275, 407]
+ax_pos["slice_smoothed"] = [218, 195, 526, 407]
+ax_pos["slice_unsmoothed"] = [218, 195, 786, 407]
+
+
+
 ax_pos["image0"] = [120, 120, 6, 631]
 ax_pos["image1"] = [120, 120, 134, 631]
 ax_pos["image2"] = [120, 120, 261, 631]
@@ -1311,11 +1432,14 @@ parser.add_argument("-f", "--field", type=str, default='COSMOSA',
                     help="Field to generate plots for.")
 parser.add_argument("-i", "--ifu", type=str, default='022',
                     help="IFU to generate plots for.")
-parser.add_argument("-j", "--single_id", type=float, default=np.nan,
+parser.add_argument("-j", "--single_id", type=float, default=4,
                     help="Alows to generate plot only for one IF (instead of all picked ones.")
 
 parser.add_argument("-p", "--filename_appendix", type=str, default="",
                     help="Filename appendix.")
+
+parser.add_argument("-c", "--ftcal", type=str, default="specphot/mean_cal_COSMOSA.txt",
+                    help="Flux calibration.")
 
 args = parser.parse_args(sys.argv[1:])
 
@@ -1327,5 +1451,8 @@ IFU = args.ifu
 
 filename_appendix = args.filename_appendix
 
-#mk_detection_plots_from_manual(IFU, image_catalog, layoutmode=False, single_id=None)
-mk_detection_plots(args.field, IFU, image_catalog, layoutmode=False, single_id=args.single_id)
+layoutmode=False
+
+ftcal = "mean_cal.txt"
+
+mk_detection_plots(args.field, IFU, image_catalog, ftcal, single_id=args.single_id)
