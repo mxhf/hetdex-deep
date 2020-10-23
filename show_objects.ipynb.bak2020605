@@ -1,0 +1,1671 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "USEDS9 = False"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "/Users/mxhf/ownCloudRZG/work/MPE/hetdex/src/deep_and_repeat/COSMOS/src\r\n"
+     ]
+    }
+   ],
+   "source": [
+    "!pwd"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<style>.container { width:100% !important; }</style>"
+      ],
+      "text/plain": [
+       "<IPython.core.display.HTML object>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "# go wide screen\n",
+    "from IPython.core.display import display, HTML\n",
+    "display(HTML(\"<style>.container { width:100% !important; }</style>\"))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "if USEDS9:\n",
+    "    import pysao\n",
+    "from astropy.io import ascii, fits\n",
+    "from astropy.table import Table, Column\n",
+    "import os"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import ipywidgets as widgets\n",
+    "from IPython.display import display\n",
+    "from ipywidgets import Button, Layout\n",
+    "\n",
+    "import numpy as np"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "%matplotlib inline\n",
+    "# To prevent automatic figure display when execution of the cell ends\n",
+    "%config InlineBackend.close_figures=False \n",
+    "\n",
+    "import matplotlib.pyplot as plt\n",
+    "import numpy as np\n",
+    "\n",
+    "\n",
+    "from ipywidgets import Layout, widgets\n",
+    "from IPython.display import display,clear_output"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from astropy.visualization import (MinMaxInterval, LogStretch,\n",
+    "                           ImageNormalize)\n",
+    "\n",
+    "from astropy.visualization import PercentileInterval\n",
+    "\n",
+    "from matplotlib import cm\n",
+    "\n",
+    "from astropy.wcs import wcs"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def show_next_record(no_skip = False):\n",
+    "    global ii, catalog, current_record_idx, info, phz_zz, phz_pdz,c,m,x,y,z\n",
+    "    if not no_skip:\n",
+    "        current_record_idx += 1\n",
+    "        \n",
+    "    records = catalog[ii]\n",
+    "    record = records[current_record_idx]\n",
+    "    #print(record[\"comment2\"])\n",
+    "    \n",
+    "    s = \"\"\n",
+    "    s = \"<style>\"\n",
+    "    s = \"table, th, td {\"\n",
+    "    s = \"  border: 1px solid black;\"\n",
+    "    s = \"  border-collapse: collapse;\"\n",
+    "    s = \"}\"\n",
+    "    s = \"th, td {\"\n",
+    "    s = \"  padding: 20px;\"\n",
+    "    s = \"}\"\n",
+    "    s = \"</style>\"\n",
+    "\n",
+    "    s += \"<b>Object {} of {}</b><br>\\n\".format(current_record_idx+1, len(records))\n",
+    "    \n",
+    "    \n",
+    "    ncols = 3\n",
+    "    tablerows = []\n",
+    "    sr = \"\"\n",
+    "    z_lya = record[\"wl_com\"] /1216. - 1.\n",
+    "    z_oii = record[\"wl_com\"] /3727. - 1.\n",
+    "    \n",
+    "    s += \"<b>z_LyA = {:.2f}</b><br>\\n\".format(z_lya)\n",
+    "    s += \"<b>z_OII = {:.2f}</b><br>\\n\".format(z_oii)\n",
+    "    \n",
+    "    s += \"<table style='width:100%'>\\n\"\n",
+    "    \n",
+    "    for i,n in enumerate(record.colnames):\n",
+    "        sr += \"<td><b>{:10s}:</b> \".format(n)\n",
+    "        sr += str(record[n]) + \" \"\n",
+    "        if record.columns[n].unit != \"\":\n",
+    "            ustr = str(record.columns[n].unit)\n",
+    "            if ustr == \"None\":\n",
+    "                ustr = \"\"\n",
+    "            sr += ustr + \"</td>\\n\"\n",
+    "        else:\n",
+    "            sr += \"</td>\\n\"\n",
+    "        if i % ncols == 0.:\n",
+    "            tablerows.append(sr)\n",
+    "            sr = \"\"\n",
+    "    s += \"</tr>\\n\"\n",
+    "    s += \"</tr>\\n<tr>\".join(tablerows)       \n",
+    "    s += \"</tr>\\n\"\n",
+    "    s += \"</table>\\n\"\n",
+    "    \n",
+    "    info.value = s\n",
+    "    comment.value = str(record[\"comment2\"])\n",
+    "    \n",
+    "    if current_record_idx == len(records):\n",
+    "        print(\"Last objects reached.\")\n",
+    "        return\n",
+    "    \n",
+    "    \n",
+    "    id = record[\"id\"]\n",
+    "    x = record[\"manualx\"]\n",
+    "    y = record[\"manualy\"]\n",
+    "    z = record[\"manualz\"]\n",
+    "    if np.isnan(x):\n",
+    "        x = record[\"x_com\"]\n",
+    "    if np.isnan(y):\n",
+    "        y = record[\"y_com\"]\n",
+    "    if np.isnan(z):\n",
+    "        z = record[\"z_com\"]\n",
+    "        \n",
+    "    show_object(x,y,z,vmax,gbimages)\n",
+    "    #current_record_idx += 1\n",
+    "    \n",
+    "    zlya = record[\"wl_com\"]/1216. - 1.\n",
+    "    zoii = record[\"wl_com\"]/3727. - 1.\n",
+    "    plot_phz(record[\"ra_com\"],record[\"dec_com\"],phz_zz, phz_pdz, zlya, zoii)\n",
+    "    \n",
+    "\n",
+    "    plot_spec(c,m,record[\"id\"], record[\"wl_com\"])\n",
+    "    #try:\n",
+    "    #    plot_spec(c,m,record[\"id\"], record[\"wl_com\"])\n",
+    "    #except:\n",
+    "    #    print(\"Error plotting spectrum.\")\n",
+    "\n",
+    "\n",
+    "def update_catalog(classifier):\n",
+    "    global ii, catalog, current_record_idx, info\n",
+    "    records = catalog[ii]\n",
+    "    \n",
+    "    record = records[current_record_idx-1]\n",
+    "    id = record[\"id\"]\n",
+    "    ifu = record[\"ifu\"]\n",
+    "    jj  = catalog[\"id\"] == id\n",
+    "    jj *= catalog[\"ifu\"] == ifu\n",
+    "    if not np.sum(jj) == 1:\n",
+    "        print(\"Unable to find object {} for ifu {}.\".format(id, ifu))\n",
+    "    catalog[\"class2\"][jj] = classifier\n",
+    " \n",
+    "def update_comment(comment):\n",
+    "    global ii, catalog, current_record_idx, info\n",
+    "    records = catalog[ii]\n",
+    "    \n",
+    "    record = records[current_record_idx-1]\n",
+    "    id = record[\"id\"]\n",
+    "    ifu = record[\"ifu\"]\n",
+    "    jj  = catalog[\"id\"] == id\n",
+    "    jj *= catalog[\"ifu\"] == ifu\n",
+    "    if not np.sum(jj) == 1:\n",
+    "        print(\"Unable to find object {} for ifu {}.\".format(id, ifu))\n",
+    "    print(\"@@@ comment = \",comment )\n",
+    "    catalog[\"comment2\"][jj] = comment\n",
+    " \n",
+    "\n",
+    "def on_scale_up(b):\n",
+    "    global vmax\n",
+    "    vmax = float(ds9.xpa.get(\"scale limits\").split()[1])\n",
+    "    ds9.xpa.set(\"frame 1\")\n",
+    "    ds9.xpa.set(\"scale limits 0. {}\".format(vmax*1.05))\n",
+    "\n",
+    "def on_scale_down(b):\n",
+    "    global vmax\n",
+    "    vmax = float(ds9.xpa.get(\"scale limits\").split()[1])\n",
+    "    ds9.xpa.set(\"frame 1\")\n",
+    "    ds9.xpa.set(\"scale limits 0. {}\".format(vmax*.95))\n",
+    "\n",
+    "    \n",
+    "def on_prevslice_clicked(b):\n",
+    "    ds9.xpa.set(\"frame 1\")\n",
+    "    ds9.xpa.set(\"cube prev\")\n",
+    "\n",
+    "def on_nextslice_clicked(b):\n",
+    "    ds9.xpa.set(\"frame 1\")\n",
+    "    ds9.xpa.set(\"cube next\")\n",
+    "    \n",
+    "def on_zoomin_clicked(b):\n",
+    "    global imgscale\n",
+    "    imgscale = imgscale*.66\n",
+    "    cube_wcs = updateCubes(fncube, fnorigcube, fnmap, vmax, x, y, z)\n",
+    "    updateFigs(gbimages, x, y, z, cube_wcs)\n",
+    "\n",
+    "def on_zoomout_clicked(b):\n",
+    "    global imgscale\n",
+    "    imgscale = imgscale*1.50\n",
+    "    cube_wcs = updateCubes(fncube, fnorigcube, fnmap, vmax, x, y, z)\n",
+    "    updateFigs(gbimages, x, y, z, cube_wcs)\n",
+    "    \n",
+    "def on_prev_clicked(b):\n",
+    "    global current_record_idx\n",
+    "    current_record_idx -=2\n",
+    "    show_next_record()\n",
+    "    #print(\"Previous object.\")\n",
+    "\n",
+    "def on_next_clicked(b):\n",
+    "    global current_record_idx, records\n",
+    "    if current_record_idx == len(records):\n",
+    "        print(\"No more objects.\")\n",
+    "    else:\n",
+    "        show_next_record()\n",
+    "        # always save catalog\n",
+    "        on_save_clicked(None)\n",
+    "\n",
+    "    \n",
+    "def on_jump_clicked(b):\n",
+    "    global current_record_idx, records\n",
+    "    idxx = np.arange(len(records))\n",
+    "    tt = object_selection.value.split()\n",
+    "    \n",
+    "    ii = records[\"id\"] == int(tt[0])\n",
+    "    current_record_idx = idxx[ii][0] \n",
+    "    on_next_clicked(b)\n",
+    "    \n",
+    "def on_halo_clicked(b):\n",
+    "    update_catalog(\"halo\")\n",
+    "    #show_next_record()\n",
+    "    #print(\"Selected halo.\")\n",
+    "    \n",
+    "def on_fil_clicked(b):\n",
+    "    update_catalog(\"filament\")\n",
+    "    #show_next_record()\n",
+    "    #print(\"Selected halo.\")\n",
+    "    \n",
+    "def on_ps_clicked(b):\n",
+    "    update_catalog(\"pointsource\")\n",
+    "    #show_next_record()\n",
+    "    #print(\"Selected poinsource.\")\n",
+    "    \n",
+    "def on_lae_clicked(b):\n",
+    "    update_catalog(\"LAE\")\n",
+    "    \n",
+    "def on_oii_clicked(b):\n",
+    "    update_catalog(\"OII\")\n",
+    "    \n",
+    "def on_gal_clicked(b):\n",
+    "    update_catalog(\"gal\")\n",
+    "    #show_next_record()\n",
+    "    #print(\"Selected poinsource.\")\n",
+    "    \n",
+    "def on_agn_clicked(b):\n",
+    "    update_catalog(\"agn\")\n",
+    "    #show_next_record()\n",
+    "    #print(\"Selected poinsource.\")\n",
+    "    \n",
+    "\n",
+    "def on_junk_clicked(b):\n",
+    "    update_catalog(\"junk\")\n",
+    "    #show_next_record()\n",
+    "    #print(\"Selected junk.\")\n",
+    "    \n",
+    "    \n",
+    "def on_save_clicked(b):\n",
+    "    global fncatalog\n",
+    "    #catalog.write(newfncatalog, format=\"ascii.ecsv\", overwrite=True)\n",
+    "    #fncatalog=\"../data/msf2outcube_{}_allifu.cat\".format(field)\n",
+    "    h,t = os.path.split(fncatalog)\n",
+    "    newfncatalog = os.path.join( h , \"m\" + t)\n",
+    "    catalog.write(newfncatalog, format=\"ascii.ecsv\", overwrite=True)\n",
+    "\n",
+    "    \n",
+    "def on_transfer_contours(b):\n",
+    "    transfer_contours()\n",
+    "    \n",
+    "    \n",
+    "def on_clear_contours(b):\n",
+    "    clear_contours_on_images()\n",
+    "    \n",
+    "    \n",
+    "def on_add_comment_clicked(b):\n",
+    "    global comment\n",
+    "    update_comment(comment.value)\n",
+    "    "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "if USEDS9:\n",
+    "    def startup(field, ifu, fncube, fnorigcube, fnmap, gbimages, vmax):\n",
+    "        global ds9, LOADSDSS\n",
+    "        ds9 = pysao.ds9()\n",
+    "        ds9.xpa.set(\"frame 1\")\n",
+    "        ds9.xpa.set(\"fits {fncube}\".format(fncube=fncube))\n",
+    "\n",
+    "        ds9.xpa.set(\"frame 2\")\n",
+    "        ds9.xpa.set(\"fits {fnorigcube}\".format(fnorigcube=fnorigcube))\n",
+    "\n",
+    "        ds9.xpa.set(\"frame lock wcs\")\n",
+    "        ds9.xpa.set(\"cube lock wcs\")\n",
+    "\n",
+    "        ds9.xpa.set(\"tile\")\n",
+    "        ds9.xpa.set(\"tile grid mode manual\")\n",
+    "        ds9.xpa.set(\"tile grid layout 6 2\")\n",
+    "\n",
+    "        ds9.xpa.set(\"frame 3\")\n",
+    "        ds9.xpa.set(\"fits {fnmap}\".format(fnmap=fnmap))\n",
+    "        for i,f in enumerate(gbimages):\n",
+    "            ds9.xpa.set(\"frame {}\".format(i+4))\n",
+    "            ds9.xpa.set(\"fits {f}\".format(f=f))\n",
+    "\n",
+    "\n",
+    "        ds9.xpa.set(\"frame 1\")\n",
+    "        ds9.xpa.set(\"cmap staircase\")\n",
+    "        ds9.xpa.set(\"scale limits 0 {}\".format(vmax))\n",
+    "        #ds9.xpa.set(\"crosshair\")\n",
+    "\n",
+    "        ds9.xpa.set(\"frame 2\")\n",
+    "        ds9.xpa.set(\"cmap staircase\")\n",
+    "        ds9.xpa.set(\"scale limits 0 {}\".format(vmax*3.))\n",
+    "        #ds9.xpa.set(\"crosshair\")\n",
+    "\n",
+    "        ds9.xpa.set(\"frame 1\")\n",
+    "        if LOADSDSS:\n",
+    "            ds9.xpa.set(\"catalog sdss9\")\n",
+    "            ds9.xpa.set(\"frame 1\")\n",
+    "            ds9.xpa.set(\"catalog symbol color white\")\n",
+    "            ds9.xpa.set(\"catalog close\")\n",
+    "\n",
+    "        ds9.xpa.set(\"lock crosshair wcs\")\n",
+    "        ds9.xpa.set(\"catalog load ../civano+2016_cls.xml\")\n",
+    "        ds9.xpa.set(\"catalog symbol color green\")\n",
+    "        ds9.xpa.set(\"catalog close\")\n",
+    "\n",
+    "        for i,f in enumerate(gbimages):\n",
+    "            ds9.xpa.set(\"frame {}\".format(i+4))\n",
+    "            #ds9.xpa.set(\"cmap heat\")\n",
+    "            ds9.xpa.set(\"cmap grey\")\n",
+    "            ds9.xpa.set(\"cmap invert yes\")\n",
+    "            ds9.xpa.set(\"scale mode 95.\")\n",
+    "            #ds9.xpa.set(\"scale mode 98.\")\n",
+    "\n",
+    "        regfile=\"../data/sf2outcube_{field}_{ifu}_photz.reg\".format(field=field,ifu=ifu)\n",
+    "        if not os.path.exists(regfile):\n",
+    "            cmd=\"python ../src/zphotds9.py {fncube}\".format(fncube=fncube)\n",
+    "            !$cmd\n",
+    "\n",
+    "        ds9.xpa.set(\"frame 4\")\n",
+    "        #print(\"regions load {}  color grey\".format(regfile))\n",
+    "        ds9.xpa.set(\"regions load {}\".format(regfile))\n",
+    "        ds9.xpa.set(\"regions color grey \")\n",
+    "\n",
+    "\n",
+    "        ds9.xpa.set(\"frame 1\")\n",
+    "\n",
+    "        return ds9\n",
+    "\n",
+    "    showing_contours = False\n",
+    "\n",
+    "\n",
+    "    def clear_contours_on_images():\n",
+    "        global ds9,gbimages, showing_contours\n",
+    "        for i in range(len(gbimages) + 2):\n",
+    "           ds9.xpa.set(\"frame {}\".format(i+1))\n",
+    "           ds9.xpa.set(\"contour clear \")\n",
+    "\n",
+    "\n",
+    "    def show_object(x,y,z,vmax,gbimages):\n",
+    "        global showing_contours\n",
+    "\n",
+    "        ds9.xpa.set(\"frame 1\")\n",
+    "        ds9.xpa.set(\"contour clear \")\n",
+    "\n",
+    "        if showing_contours:\n",
+    "            clear_contours_on_images()\n",
+    "            showing_contours = False\n",
+    "\n",
+    "        ds9.xpa.set(\"frame 1\")\n",
+    "        ds9.xpa.set(\"pan to {} {} image\".format(x,y))\n",
+    "        ds9.xpa.set(\"crosshair lock wcs\")\n",
+    "        ds9.xpa.set(\"crosshair {} {} image\".format(x,y))\n",
+    "\n",
+    "        print( \"cube {} image\".format(int(z)) )\n",
+    "        try:\n",
+    "            # somtimes, realy this is failing, no idea why.\n",
+    "            ds9.xpa.set(\"cube {} image\".format(int(z)))\n",
+    "        except:\n",
+    "            ds9.xpa.set(\"cube {} image\".format(int(z)+1))\n",
+    "\n",
+    "        s=vmax/0.6; \n",
+    "        levels=[ .2*s, .3*s, .4*s, .5*s, .6*s, .8*s, 1.0*s ]\n",
+    "        ds9.xpa.set(\"frame 1\")\n",
+    "        ds9.xpa.set(\"contour method smooth\")\n",
+    "        ds9.xpa.set(\"contour generate\")\n",
+    "        ds9.xpa.set(\"contour \")\n",
+    "        #print(\"contour levels \" + \" \".join([str(l) for l in levels]))\n",
+    "        ds9.xpa.set(\"contour levels \" + \" \".join([str(l) for l in levels]))\n",
+    "        ds9.xpa.set(\"contour color grey\")\n",
+    "\n",
+    "        ds9.xpa.set(\"contour close \")\n",
+    "\n",
+    "    def transfer_contours():\n",
+    "        global ds9, showing_contours\n",
+    "\n",
+    "        ds9.xpa.set(\"frame 1\")\n",
+    "        ds9.xpa.set(\"contour copy\")\n",
+    "\n",
+    "        for i,f in enumerate(gbimages):\n",
+    "           ds9.xpa.set(\"frame {}\".format(i+3))\n",
+    "           ds9.xpa.set(\"contour paste wcs white 1 no \")\n",
+    "\n",
+    "        #ds9.xpa.set(\"contours close\")\n",
+    "        ds9.xpa.set(\"frame 1\")\n",
+    "        showing_contours = True\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "if False:\n",
+    "    fncatalog=\"../data/msf2outcube_{}_allifu.cat\".format(field)\n",
+    "    h,t = os.path.split(fncatalog)\n",
+    "    newfncatalog = os.path.join( h , \"m\" + t)\n",
+    "    catalog.write(newfncatalog, format=\"ascii.ecsv\", overwrite=True)\n",
+    "\n",
+    "    catalog.write(fncatalog, format=\"ascii.ecsv\", overwrite=True)\n",
+    "\n",
+    "    vmax = float(ds9.xpa.get(\"scale limits\").split()[1])\n",
+    "    ds9.xpa.set(\"frame 1\")\n",
+    "    ds9.xpa.set(\"scale limits 0. {}\".format(vmax*.95))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "\n",
+    "def plot_phz(ra,dec,zz,phz_pdz, zlya, zoii, rmatch = 2.5):\n",
+    "    global phz_canvas, colorcycle\n",
+    "    dd = np.sqrt(((phz_pdz[1].data[\"RA\"] - ra)*np.cos(np.deg2rad(dec)))**2. + (phz_pdz[1].data[\"DEC\"] - dec)**2.)*3600.\n",
+    "    ii = dd < rmatch\n",
+    "    N = np.sum(ii)\n",
+    "\n",
+    "    #print(\"{} objects within {} arcsec.\".format( N, rmatch ) )\n",
+    "    \n",
+    "    plt.ioff()\n",
+    "    #ax=plt.gca()\n",
+    "    #ax.clear()\n",
+    "    fig = plt.figure(figsize=[3,3])\n",
+    "    ax = plt.subplot()\n",
+    "        \n",
+    "    if N > 0:\n",
+    "        indices = np.arange(len(phz_pdz[1].data))\n",
+    "        for j,c in zip(range(N), colorcycle[:N]):\n",
+    "            i = indices[ii][j]\n",
+    "            pp = phz_pdz[1].data[i][75:675]\n",
+    "            ax.plot(phz_zz, pp/np.sum(pp), '-', color=c)\n",
+    "    else:\n",
+    "        ax.text(.5,.5,\"no match\",transform=ax.transAxes, ha='center', va='center')\n",
+    "        \n",
+    "    ax.set_xlabel(\"z\")\n",
+    "    ax.set_ylabel(\"p(z)\")\n",
+    "    \n",
+    "    ax.axvline(zlya,c='r')\n",
+    "    ax.axvline(zoii,c='g')\n",
+    "    with phz_canvas:\n",
+    "        clear_output(wait=True)\n",
+    "        display(ax.figure)\n",
+    "\n",
+    "        \n",
+    "def plot_spec(c, m, id, wl, win=300.):\n",
+    "    global spec_canvas, current_record_idx\n",
+    "\n",
+    "    plt.ioff()\n",
+    "    #ax=plt.gca()\n",
+    "    #ax.clear()\n",
+    "    fig = plt.figure(figsize=[15,3])\n",
+    "    ax = plt.subplot()\n",
+    "\n",
+    "    mask = np.sum(  m.data == id, axis=0) > 0\n",
+    "    try:\n",
+    "        spec = np.array( [np.sum(c.data[i][mask]) for i in range(len(c.data))] )\n",
+    "    except:\n",
+    "        spec = np.zeros_like(c.grid())\n",
+    "    \n",
+    "    jj = (c.grid() > (wl - win/2.)) * (c.grid() <= (wl + win/2.))\n",
+    "    vmin,vmax = np.min(spec[jj]),np.max(spec[jj])\n",
+    "    vmin,vmax = -np.max(spec[jj]),np.max(spec[jj])\n",
+    "\n",
+    "    \n",
+    "    ax.plot(c.grid(), spec, 'k-')\n",
+    "\n",
+    "    ax.set_xlabel(\"wavelength [A]\")\n",
+    "    ax.set_ylabel(\"flux [arb]\")\n",
+    "    \n",
+    "    ax.axvline(wl,c='r')\n",
+    "    ax.set_ylim([vmin,vmax])\n",
+    "\n",
+    "    with spec_canvas:\n",
+    "        clear_output(wait=True)\n",
+    "        display(ax.figure)\n",
+    "        \n",
+    "    record = records[current_record_idx]\n",
+    "    # @@@\n",
+    "    p = fit_peak( c.grid(), spec,  record)\n",
+    "    \n",
+    "    z = p[1]/1216. - 1.\n",
+    "    s = \"sigma = {:.1f} km/s\".format(  p[2]/p[1] * 3e5 ) \n",
+    "    \n",
+    "    ax.text(.5, .5, s, transform=ax.transAxes, size=20)\n",
+    "    print(s)\n",
+    "    \n",
+    "        \n",
+    "    \n",
+    "    \n",
+    "#ra = 150.22773\n",
+    "#dec =   2.385096\n",
+    "#plot_phz(ra,dec,phz_zz,phz_pdz, zlya=2., zoii=1., rmatch = 2.)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from scipy.optimize import least_squares\n",
+    "\n",
+    "import numpy as np\n",
+    "\n",
+    "\n",
+    "def gauss(mu, sigma, x):\n",
+    "    return 1./(sigma * np.sqrt(2. * np.pi) ) * np.exp( -(x-mu)**2./(2. * sigma**2.))\n",
+    "\n",
+    "def peval(p,x):\n",
+    "    A,mu,sigma = p\n",
+    "    return A*gauss(mu, sigma, x)\n",
+    "\n",
+    "def resid(p, x, y, yerr=[]):\n",
+    "    model = peval(p,x)\n",
+    "    if yerr==[]:\n",
+    "        return (y - model)\n",
+    "    else:\n",
+    "        return (y - model)/yerr\n",
+    "\n",
+    "def fit_gaussians(lineset, ww, csout, wlwin, pp=[]):\n",
+    "    results = []\n",
+    "\n",
+    "    for i,wlc in enumerate(lineset):\n",
+    "        if pp != []:\n",
+    "                p0 = pp[i]\n",
+    "        else:\n",
+    "            p0 = [2000.,wlc,10.]\n",
+    "        ii = (ww > wlc-wlwin/2.) * (ww < wlc+wlwin/2.)\n",
+    "        ii *= ~ np.isnan(csout)\n",
+    "        fit = least_squares(resid, p0, args=(ww[ii], csout[ii]))\n",
+    "        p = fit.x\n",
+    "\n",
+    "        if False:\n",
+    "            f=plt.figure()\n",
+    "\n",
+    "            plt.plot(ww[ii], csout[ii])\n",
+    "            plt.plot(ww[ii], peval(p,ww[ii]))\n",
+    "\n",
+    "        results.append([p[0], p[1],p[2]])\n",
+    "\n",
+    "    results = np.array(results)\n",
+    "\n",
+    "\n",
+    "    return results\n",
+    "\n",
+    "def fit_peak( ww, csout_unsmoothed,  r, win=300. ):\n",
+    "    print(\"ww : \", ww)\n",
+    "    ff = csout_unsmoothed\n",
+    "    #yerr = np.std(nsout,axis=0)\n",
+    "    ii = (ww > (r[\"wl_com\"] - win/2.)) * (ww < (r[\"wl_com\"] + win/2.))\n",
+    "    ii *= ~ np.isnan(csout_unsmoothed)\n",
+    "\n",
+    "    dw = ww[1]-ww[0]\n",
+    "\n",
+    "    A0 = np.sum(ff[ii]) * dw\n",
+    "    mu0    = r[\"wl_com\"]\n",
+    "    sigma0 = r[\"dwl\"]\n",
+    "    p0=[A0,mu0,sigma0]\n",
+    "\n",
+    "    #fit = least_squares(resid, p0, args=(ww[ii],ff[ii],yerr[ii]))\n",
+    "    fit = least_squares(resid, p0, args=(ww[ii],ff[ii]))\n",
+    "    p = fit.x\n",
+    "    #print(fit.x)\n",
+    "    ii = (ww > (p[1] - win/2.)) * (ww < (p[1] + win/2.))\n",
+    "    ii *= ~ np.isnan(ff)\n",
+    "    # refit with better centroid\n",
+    "    fit = least_squares(resid, p0, args=(ww[ii],ff[ii]))\n",
+    "    p = fit.x\n",
+    "    #print(fit.x)\n",
+    "\n",
+    "    if False:\n",
+    "        f = plt.figure()\n",
+    "        plt.plot(ww[ii],ff[ii])\n",
+    "        plt.errorbar(ww[ii],ff[ii],yerr[ii])\n",
+    "        plt.plot(ww[ii],peval(p,ww[ii]))\n",
+    "        #ax1.fill_between(ww, yerr, -yerr,alpha=0.2, edgecolor='black', facecolor='grey')\n",
+    "    \n",
+    "    return p"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def mkgui():\n",
+    "    global info, comment, phz_canvas, spec_canvas, object_selection, figs\n",
+    "    \n",
+    "    \n",
+    "    button_zoomin = widgets.Button(\n",
+    "        description='zoom in',\n",
+    "        disabled=False,\n",
+    "        button_style='', # 'success', 'info', 'warning', 'danger' or ''\n",
+    "        tooltip='Click me',\n",
+    "        icon='check'\n",
+    "    )\n",
+    "\n",
+    "    button_zoomout = widgets.Button(\n",
+    "        description='zoom out',\n",
+    "        disabled=False,\n",
+    "        button_style='', # 'success', 'info', 'warning', 'danger' or ''\n",
+    "        tooltip='Click me',\n",
+    "        icon='check'\n",
+    "    )\n",
+    "    \n",
+    "    \n",
+    "    button_scaleup = widgets.Button(\n",
+    "        description='scale up',\n",
+    "        disabled=False,\n",
+    "        button_style='', # 'success', 'info', 'warning', 'danger' or ''\n",
+    "        tooltip='Click me',\n",
+    "        icon='check'\n",
+    "    )\n",
+    "\n",
+    "    button_scaledown = widgets.Button(\n",
+    "        description='scale down',\n",
+    "        disabled=False,\n",
+    "        button_style='', # 'success', 'info', 'warning', 'danger' or ''\n",
+    "        tooltip='Click me',\n",
+    "        icon='check'\n",
+    "    )\n",
+    "\n",
+    "\n",
+    "    button_prevslice = widgets.Button(\n",
+    "        description='previous slice',\n",
+    "        disabled=False,\n",
+    "        button_style='', # 'success', 'info', 'warning', 'danger' or ''\n",
+    "        tooltip='Click me',\n",
+    "        icon='check'\n",
+    "    )\n",
+    "\n",
+    "    button_nextslice = widgets.Button(\n",
+    "        description='next slice',\n",
+    "        disabled=False,\n",
+    "        button_style='', # 'success', 'info', 'warning', 'danger' or ''\n",
+    "        tooltip='Click me',\n",
+    "        icon='check'\n",
+    "    )\n",
+    "\n",
+    "    button_transfer_contours = widgets.Button(\n",
+    "        description='add contours',\n",
+    "        disabled=False,\n",
+    "        button_style='', # 'success', 'info', 'warning', 'danger' or ''\n",
+    "        tooltip='Click me',\n",
+    "        icon='check'\n",
+    "    )\n",
+    "\n",
+    "    button_clear_contours = widgets.Button(\n",
+    "        description='clear contours',\n",
+    "        disabled=False,\n",
+    "        button_style='', # 'success', 'info', 'warning', 'danger' or ''\n",
+    "        tooltip='Click me',\n",
+    "        icon='check'\n",
+    "    )\n",
+    "\n",
+    "    button_prev = widgets.Button(\n",
+    "        description='Previous',\n",
+    "        disabled=False,\n",
+    "        button_style='', # 'success', 'info', 'warning', 'danger' or ''\n",
+    "        tooltip='Click me',\n",
+    "        icon='check'\n",
+    "    )\n",
+    "\n",
+    "    button_next = widgets.Button(\n",
+    "        description='Next',\n",
+    "        disabled=False,\n",
+    "        button_style='success', # 'success', 'info', 'warning', 'danger' or ''\n",
+    "        tooltip='Click me',\n",
+    "        icon='check'\n",
+    "    )\n",
+    "\n",
+    "    button_pointsource = widgets.Button(\n",
+    "        description='Pointsource',\n",
+    "        disabled=False,\n",
+    "        button_style='', # 'success', 'info', 'warning', 'danger' or ''\n",
+    "        tooltip='Click me',\n",
+    "        icon='check'\n",
+    "    )\n",
+    "\n",
+    "    button_lae = widgets.Button(\n",
+    "        description='LAE',\n",
+    "        disabled=False,\n",
+    "        button_style='', # 'success', 'info', 'warning', 'danger' or ''\n",
+    "        tooltip='Click me',\n",
+    "        icon='check'\n",
+    "    )\n",
+    "\n",
+    "    button_oii = widgets.Button(\n",
+    "        description='OII',\n",
+    "        disabled=False,\n",
+    "        button_style='', # 'success', 'info', 'warning', 'danger' or ''\n",
+    "        tooltip='Click me',\n",
+    "        icon='check'\n",
+    "    )\n",
+    "\n",
+    "    button_halo = widgets.Button(\n",
+    "        description='Halo',\n",
+    "        disabled=False,\n",
+    "        button_style='', # 'success', 'info', 'warning', 'danger' or ''\n",
+    "        tooltip='Click me',\n",
+    "        icon='check'\n",
+    "    )\n",
+    "\n",
+    "    button_fil = widgets.Button(\n",
+    "        description='Filament',\n",
+    "        disabled=False,\n",
+    "        button_style='', # 'success', 'info', 'warning', 'danger' or ''\n",
+    "        tooltip='Click me',\n",
+    "        icon='check'\n",
+    "    )\n",
+    "\n",
+    "    button_junk = widgets.Button(\n",
+    "        description='Junk',\n",
+    "        disabled=False,\n",
+    "        button_style='danger', # 'success', 'info', 'warning', 'danger' or ''\n",
+    "        tooltip='Click me',\n",
+    "        icon='check'\n",
+    "    )\n",
+    "\n",
+    "    button_gal = widgets.Button(\n",
+    "        description='Galaxy',\n",
+    "        disabled=False,\n",
+    "        button_style='', # 'success', 'info', 'warning', 'danger' or ''\n",
+    "        tooltip='Click me',\n",
+    "        icon='check'\n",
+    "    )\n",
+    "\n",
+    "    button_agn = widgets.Button(\n",
+    "        description='AGN',\n",
+    "        disabled=False,\n",
+    "        button_style='', # 'success', 'info', 'warning', 'danger' or ''\n",
+    "        tooltip='Click me',\n",
+    "        icon='check'\n",
+    "    )\n",
+    "\n",
+    "    button_save = widgets.Button(\n",
+    "        description='Save',\n",
+    "        disabled=False,\n",
+    "        button_style='warning', # 'success', 'info', 'warning', 'danger' or ''\n",
+    "        tooltip='Click me',\n",
+    "        icon='check'\n",
+    "    )\n",
+    "\n",
+    "\n",
+    "    info = widgets.HTML(\n",
+    "        value=\"Hello <b>World</b>\",\n",
+    "        placeholder='Some HTML',\n",
+    "        description='Some HTML',\n",
+    "    )\n",
+    "\n",
+    "\n",
+    "    comment = widgets.Textarea(\n",
+    "        value='',\n",
+    "        placeholder='Type something',\n",
+    "        description='String:',\n",
+    "        disabled=False\n",
+    "    )\n",
+    "\n",
+    "    button_add_comment = widgets.Button(\n",
+    "        description='Add comment',\n",
+    "        disabled=False,\n",
+    "        button_style='warning', # 'success', 'info', 'warning', 'danger' or ''\n",
+    "        tooltip='Click me',\n",
+    "        icon='check'\n",
+    "    )\n",
+    "\n",
+    "    object_selection = widgets.Dropdown(\n",
+    "        options=['-1'],\n",
+    "        value='-1',\n",
+    "        description='Jump to:',\n",
+    "        disabled=False,\n",
+    "    )\n",
+    "    button_jump = widgets.Button(\n",
+    "        description='Jump',\n",
+    "        disabled=False,\n",
+    "        button_style='success', # 'success', 'info', 'warning', 'danger' or ''\n",
+    "        tooltip='Click me',\n",
+    "        icon='arrow'\n",
+    "    )\n",
+    "\n",
+    "    button_prevslice.on_click(on_prevslice_clicked)\n",
+    "    button_nextslice.on_click(on_nextslice_clicked)\n",
+    "    button_scaleup.on_click(on_scale_up)\n",
+    "    button_scaledown.on_click(on_scale_down)\n",
+    "    button_transfer_contours.on_click(on_transfer_contours)\n",
+    "    button_clear_contours.on_click(on_clear_contours)\n",
+    "    button_zoomin.on_click(on_zoomin_clicked)\n",
+    "    button_zoomout.on_click(on_zoomout_clicked)\n",
+    "\n",
+    "\n",
+    "    button_prev.on_click(on_prev_clicked)\n",
+    "    button_next.on_click(on_next_clicked)\n",
+    "    button_pointsource.on_click(on_ps_clicked)\n",
+    "    button_lae.on_click(on_lae_clicked)\n",
+    "    button_oii.on_click(on_oii_clicked)\n",
+    "    button_halo.on_click(on_halo_clicked)\n",
+    "    button_fil.on_click(on_fil_clicked)\n",
+    "    button_gal.on_click(on_gal_clicked)\n",
+    "    button_agn.on_click(on_agn_clicked)\n",
+    "    button_junk.on_click(on_junk_clicked)\n",
+    "    \n",
+    "    button_jump.on_click(on_jump_clicked)\n",
+    "\n",
+    "    button_save.on_click(on_save_clicked)\n",
+    "    button_add_comment.on_click(on_add_comment_clicked)\n",
+    "\n",
+    "    # buttons, spectra and phz's\n",
+    "    items = [widgets.Label(value=\"Objects\"), button_prev, button_next, \\\n",
+    "             button_pointsource, button_lae, button_oii, button_halo, button_fil, button_gal, button_agn, button_junk]\n",
+    "    buttonbox1 = widgets.VBox(items, layout=Layout(width = '150px', positioning=\"bottom\"))\n",
+    "\n",
+    "    items = [widgets.Label(value=\"ds9 control\"), button_prevslice, button_nextslice, button_scaleup, \\\n",
+    "             button_scaledown, button_zoomin, button_zoomout, button_transfer_contours, button_clear_contours,\n",
+    "             widgets.Label(value=\"catalog\"), button_save]\n",
+    "    buttonbox2 = widgets.VBox(items, layout=Layout(width = '150px', positioning=\"bottom\"))\n",
+    "\n",
+    "    \n",
+    "    \n",
+    "    hb5 = widgets.HBox([object_selection, button_jump], layout=Layout(width = '300px', positioning=\"bottom\"))\n",
+    "    \n",
+    "    hb4 = widgets.HBox([buttonbox1, buttonbox2], layout=Layout(width = '300px', positioning=\"bottom\"))\n",
+    "    vb1 = widgets.VBox([hb4, hb5] , layout=Layout(width = '300px', positioning=\"bottom\"))\n",
+    "    \n",
+    "    phz_canvas  = widgets.Output(layout=Layout(height='200px', width = '200px', border='light'))\n",
+    "    spec_canvas = widgets.Output(layout=Layout(height='200px', width = '700px', border='light'))\n",
+    "        \n",
+    "    items = [vb1, info]\n",
+    "    hb1 = widgets.HBox(items, layout=Layout(width='100%', positioning=\"bottom\"))\n",
+    "\n",
+    "    items = [comment, button_add_comment]\n",
+    "    hb2 = widgets.HBox(items, layout=Layout(width='100%', positioning=\"bottom\"))\n",
+    "    \n",
+    "    \n",
+    "    hb3 = widgets.HBox([spec_canvas, phz_canvas], layout=Layout(width='100%', positioning=\"bottom\"))\n",
+    "\n",
+    "    plt.ioff()\n",
+    "    ax=plt.gca()\n",
+    "\n",
+    "\n",
+    "    \n",
+    "    if USEDS9:\n",
+    "        return widgets.VBox([hb3, hb1, hb2])\n",
+    "    else:\n",
+    "        # if not using ds9 to display figures, we need additional canvases\n",
+    "        figsize = \"200px\"\n",
+    "\n",
+    "        figs = []\n",
+    "        for i in range(12):\n",
+    "                figs.append( widgets.Output(layout=Layout(height=figsize, width = figsize, border='light')) )\n",
+    "\n",
+    "        figures = widgets.VBox([ widgets.HBox(figs[0:4]), widgets.HBox(figs[4:8]), widgets.HBox(figs[8:12])  ])\n",
+    "        return widgets.HBox( [figures, widgets.VBox([hb3, hb1, hb2])] )\n",
+    "    \n",
+    "\n",
+    "\n",
+    "\n",
+    "def load_data(field, ifu, vmax, fncatalog, fncube, fnorigcube, fnmap):\n",
+    "    global gbimages, gbimages_title, ii, current_record_idx , catalog, records, phz_pdz, phz_zz, c, oc, m\n",
+    "\n",
+    "\n",
+    "    h,t = os.path.split(fncatalog)\n",
+    "    newfncatalog = os.path.join( h , \"m\" + t)\n",
+    "\n",
+    "    if os.path.exists(newfncatalog):\n",
+    "        print(\"Reading {}\".format(newfncatalog))\n",
+    "        catalog = ascii.read(newfncatalog)\n",
+    "    else:\n",
+    "        print(\"Reading {}\".format(fncatalog))\n",
+    "        catalog = ascii.read(fncatalog)\n",
+    "\n",
+    "\n",
+    "    B = \"../aux/thumbnails/{field}/ifu{ifu}_COSMOS.B.original_psf.v2.fits\".format(field=field,ifu=ifu)\n",
+    "    V = \"../aux/thumbnails/{field}/ifu{ifu}_COSMOS.V.original_psf.v2.fits\".format(field=field,ifu=ifu)\n",
+    "    gp = \"../aux/thumbnails/{field}/ifu{ifu}_COSMOS.gp.original_psf.v2.fits\".format(field=field,ifu=ifu)\n",
+    "    rp = \"../aux/thumbnails/{field}/ifu{ifu}_COSMOS.rp.original_psf.v2.fits\".format(field=field,ifu=ifu)\n",
+    "    ip = \"../aux/thumbnails/{field}/ifu{ifu}_COSMOS.ip.original_psf.v2.fits\".format(field=field,ifu=ifu)\n",
+    "    zp = \"../aux/thumbnails/{field}/ifu{ifu}_COSMOS.zp.original_psf.v2.fits\".format(field=field,ifu=ifu)\n",
+    "    Ks = \"../aux/thumbnails/{field}/ifu{ifu}_COSMOS.Ks.original_psf.v5.fits\".format(field=field,ifu=ifu)\n",
+    "    K = \"../aux/thumbnails/{field}/ifu{ifu}_COSMOS.K.UV_original_psf.v1.fits\".format(field=field,ifu=ifu)\n",
+    "\n",
+    "    gbimages=[B,V,gp,rp,ip,zp,Ks,K]\n",
+    "    gbimages_title=[\"SUBARU B\",\"SUBARU V\",\"SUBARU gp\",\"SUBARU rp\",\"SUBARU ip\",\"SUBARU zp\",\"UltraVISTA Ks\",\"CFHT K\"]\n",
+    "\n",
+    "    ii  = catalog[\"ifu\"] == ifu\n",
+    "    ii *= ~np.isnan( catalog[\"manualx\"] )\n",
+    "    ii *= catalog[\"N\"] > 3\n",
+    "    current_record_idx = 0\n",
+    "    if not \"class2\" in catalog.colnames:\n",
+    "        #catalog.add_column(Column([\"NA\"]*len(catalog), name='class2', dtype='S100'), masked=False)\n",
+    "        catalog.add_column(Column([\"NA\"]*len(catalog), name='class2', dtype='S100'))\n",
+    "    if not \"comment2\" in catalog.colnames:\n",
+    "        #catalog.add_column(Column([\"\"]*len(catalog), name='comment2', dtype='S500', masked=False))\n",
+    "        catalog.add_column(Column([\"\"]*len(catalog), name='comment2', dtype='S500'))\n",
+    "    else:\n",
+    "        old_entries = list( catalog[\"comment2\"] )\n",
+    "        catalog.remove_column(\"comment2\")\n",
+    "        catalog.add_column( Column(old_entries, name='comment2', dtype='S500') )\n",
+    "\n",
+    "    catalog = catalog.filled()\n",
+    "    records = catalog[ii]\n",
+    "    \n",
+    "    phz_pdz = fits.open(\"../pdz_cosmos2015_v1.3.fits.gz\")\n",
+    "    c = spectrum.readSpectrum(fncube)\n",
+    "    oc = spectrum.readSpectrum(fnorigcube)\n",
+    "    m = spectrum.readSpectrum(fnmap)\n",
+    "\n",
+    "    \n",
+    "    phz_zz = []\n",
+    "    for j in range(600):\n",
+    "         phz_zz.append( float( phz_pdz[1].header[\"TTYPE{}\".format(j+75)][1:].replace(\"_\",\".\") ) )\n",
+    "    ##record = records[0]\n",
+    "    #str(record[\"comment2\"])  \n",
+    "    "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "fits_cache = {}\n",
+    "def load_fits(fn):\n",
+    "    global cube_cache\n",
+    "    if not fn in fits_cache:\n",
+    "        hdulist = fits.open(fn)\n",
+    "        fits_cache[fn] = hdulist[0].header, hdulist[0].data\n",
+    "        hdulist.close()\n",
+    "    return fits_cache[fn]\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def register_ds9staircase():\n",
+    "    # register color map\n",
+    "    from matplotlib.cm import register_cmap, cmap_d\n",
+    "\n",
+    "    colors = []\n",
+    "    for ii in range(1,6):\n",
+    "        kk = ii/5.\n",
+    "        colors.append( (kk*.3,kk*.3,kk*1)  )\n",
+    "\n",
+    "    for ii in range(1,6):\n",
+    "        kk = ii/5.\n",
+    "        colors.append( (kk*.3,kk*1,kk*.3)  )\n",
+    "    for ii in range(1,6):\n",
+    "        kk = ii/5.\n",
+    "        colors.append( (kk*1,kk*.3,kk*.3)  )\n",
+    "    colors = np.array(colors)\n",
+    "    xx = np.arange(len(colors), dtype=float)\n",
+    "    xx = xx/xx.max()\n",
+    "\n",
+    "    ds9staircase = {'red': lambda v : np.interp(v, xx, colors[:,0]),\n",
+    "               'green': lambda v : np.interp(v, xx, colors[:,1]),\n",
+    "               'blue': lambda v : np.interp(v, xx, colors[:,2])}\n",
+    "\n",
+    "\n",
+    "    # Register all other colormaps\n",
+    "    register_cmap('ds9staircase', data=ds9staircase)\n",
+    "\n",
+    "register_ds9staircase()\n",
+    "\n",
+    "\n",
+    "if not USEDS9:\n",
+    "    def updateCubes(fncube, fnorigcube, fnmap, vmax, cx, cy, cz, width=100):\n",
+    "        global figs\n",
+    "        cmap = cm.gray\n",
+    "\n",
+    "        def showCube(fn, figN, vmin, vmax, cmap):\n",
+    "            plt.ioff()\n",
+    "\n",
+    "            #hdulist = fits.open(fn)\n",
+    "            # we need this such that the images can transform to the same x,y coordinates\n",
+    "            \n",
+    "            header, data = load_fits(fn)\n",
+    "            cube_wcs = wcs.WCS(header)\n",
+    "            im = data[int(np.round(cz))]\n",
+    "\n",
+    "            fig = plt.figure()\n",
+    "\n",
+    "            ax = plt.subplot()            \n",
+    "            ax.imshow(im, origin = 'bottom', cmap = cmap, vmin=vmin, vmax=vmax)\n",
+    "            ax.get_xaxis().set_visible(False)\n",
+    "            ax.get_yaxis().set_visible(False)\n",
+    "            ax.axvline(cx,color='w')\n",
+    "            ax.axhline(cy,color='w')\n",
+    "            ax.set_xlim([cx-width/2*imgscale,cx+width/2*imgscale])\n",
+    "            ax.set_ylim([cy-width/2*imgscale,cy+width/2*imgscale])\n",
+    "            \n",
+    "            with figN:\n",
+    "                clear_output(wait=True)\n",
+    "                display(ax.figure)\n",
+    "                \n",
+    "            return cube_wcs\n",
+    "                \n",
+    "        cube_wcs = showCube(fncube, figs[0], vmin=0., vmax=vmax, cmap=plt.get_cmap('ds9staircase')) \n",
+    "        __ = showCube(fnorigcube, figs[1], vmin=0., vmax=vmax*3., cmap=plt.get_cmap('ds9staircase'))\n",
+    "        __ = showCube(fnmap, figs[2], vmin=0., vmax=1, cmap=cm.gray)\n",
+    "        \n",
+    "        return cube_wcs\n",
+    "\n",
+    "        \n",
+    "    def plot_phz_ident(ax, im_wcs, rmatch = 2.5):\n",
+    "        global figs, phz_pdz, ii, catalog, current_record_idx, colorcycle\n",
+    "        \n",
+    "        \n",
+    "        records = catalog[ii]\n",
+    "        record = records[current_record_idx]\n",
+    "    \n",
+    "        ra,dec = record[\"ra_com\"], record[\"dec_com\"]\n",
+    "\n",
+    "\n",
+    "        dd = np.sqrt(((phz_pdz[1].data[\"RA\"] - ra)*np.cos(np.deg2rad(dec)))**2. + (phz_pdz[1].data[\"DEC\"] - dec)**2.)*3600.\n",
+    "        jj = dd < rmatch\n",
+    "        N = np.sum(jj)\n",
+    "        \n",
+    "\n",
+    "        a = phz_pdz[1].data[\"RA\"][jj]\n",
+    "        d = phz_pdz[1].data[\"DEC\"][jj]\n",
+    "        zz = phz_pdz[1].data[\"Z_MED_PDZ\"][jj]\n",
+    "        \n",
+    "        pix = im_wcs.all_world2pix(a,d,0)\n",
+    "        xx,yy =  list(pix[0]), list(pix[1])\n",
+    "        \n",
+    "        if len(xx) > 0:\n",
+    "            for x,y,z,c in zip(xx,yy,zz,colorcycle[:len(xx)]):\n",
+    "                ax.plot([x], [y], 'o', markersize=20, markeredgewidth=2, markeredgecolor=c, markerfacecolor='none')        \n",
+    "     \n",
+    "        \n",
+    "        \n",
+    "    def updateFigs(gbimages, cx, cy, cz, cube_wcs, width=100):\n",
+    "        global figs, imgscale\n",
+    "        cmap = cm.gray_r\n",
+    "        \n",
+    "        for i,(fn,title) in enumerate(zip(gbimages, gbimages_title)):\n",
+    "            #print(\"Loading \" + fn)\n",
+    "\n",
+    "            header, data = load_fits(fn)\n",
+    "            im_wcs = wcs.WCS(header)\n",
+    "            im = data\n",
+    "            \n",
+    "            # translate cube x,y to ra/dec\n",
+    "            a,d,__ = [float(val) for val in cube_wcs.all_pix2world(cx,cy,cz,0)]\n",
+    "\n",
+    "            imx, imy = [float(val) for val in im_wcs.all_world2pix(a,d,0)]\n",
+    "\n",
+    "            plt.ioff()\n",
+    "            fig = plt.figure()\n",
+    "\n",
+    "            # Create interval object\n",
+    "            #interval = MinMaxInterval()\n",
+    "            interval = PercentileInterval(97.)\n",
+    "            vmin, vmax = interval.get_limits(im)\n",
+    "\n",
+    "            # Create an ImageNormalize object using a SqrtStretch object\n",
+    "            norm = ImageNormalize(vmin=vmin, vmax=vmax)\n",
+    "            \n",
+    "            plt.title(title)\n",
+    "            ax = plt.subplot()            \n",
+    "            ax.imshow(im, origin = 'bottom', norm=norm, cmap = cmap)\n",
+    "            ax.get_xaxis().set_visible(False)\n",
+    "            ax.get_yaxis().set_visible(False)\n",
+    "            ax.set_xlim([imx-width/2*imgscale,imx+width/2*imgscale])\n",
+    "            ax.set_ylim([imy-width/2*imgscale,imy+width/2*imgscale])\n",
+    "            \n",
+    "            \n",
+    "            ax.axvline(imx,color='w')\n",
+    "            ax.axhline(imy,color='w')\n",
+    "            \n",
+    "            if i == 0:\n",
+    "                plot_phz_ident(ax, im_wcs)\n",
+    "            \n",
+    "            with figs[i+3]:\n",
+    "                clear_output(wait=True)\n",
+    "                display(ax.figure)\n",
+    "                \n",
+    "                \n",
+    "        \n",
+    "    def startup(field, ifu, fncube, fnorigcube, fnmap, gbimages, vmax):\n",
+    "        pass\n",
+    "        \n",
+    "\n",
+    "    def clear_contours_on_images():\n",
+    "        print(\"Currently not available in non-ds9 version.\")\n",
+    "        pass\n",
+    "    \n",
+    "    def transfer_contours():\n",
+    "        print(\"Currently not available in non-ds9 version.\")\n",
+    "        pass\n",
+    "    \n",
+    "    def show_object(x,y,z,vmax,gbimages):\n",
+    "        plt.close('all')\n",
+    "        cube_wcs = updateCubes(fncube, fnorigcube, fnmap, vmax, x, y, z)\n",
+    "        updateFigs(gbimages, x, y, z, cube_wcs)\n",
+    "     \n",
+    "\n",
+    "    def on_scale_up(b):\n",
+    "        global vmax\n",
+    "        vmax = vmax*1.05\n",
+    "        cube_wcs = updateCubes(fncube, fnorigcube, fnmap, vmax, x, y, z)\n",
+    "\n",
+    "    def on_scale_down(b):\n",
+    "        global vmax\n",
+    "        vmax = vmax*.95\n",
+    "        cube_wcs = updateCubes(fncube, fnorigcube, fnmap, vmax, x, y, z)\n",
+    "\n",
+    "\n",
+    "    def on_prevslice_clicked(b):\n",
+    "        global x, y, z\n",
+    "        z = z  - 1.\n",
+    "        cube_wcs = updateCubes(fncube, fnorigcube, fnmap, vmax, x, y, z)\n",
+    "\n",
+    "    def on_nextslice_clicked(b):\n",
+    "        global x, y, z\n",
+    "        z = z + 1.\n",
+    "        cube_wcs = updateCubes(fncube, fnorigcube, fnmap, vmax, x, y, z)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 27,
+   "metadata": {
+    "scrolled": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Reading ../data/mmsf2outcube_COSMOSD_allifu.cat\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "WARNING: FITSFixedWarning: RADECSYS= 'FK5 ' / Astrometric system \n",
+      "the RADECSYS keyword is deprecated, use RADESYSa. [astropy.wcs.wcs]\n",
+      "/Users/mxhf/.pyenv/versions/anaconda3-4.3.0/lib/python3.6/site-packages/ipykernel/__main__.py:126: MatplotlibDeprecationWarning: Adding an axes using the same arguments as a previous axes currently reuses the earlier instance.  In a future version, a new instance will always be created and returned.  Meanwhile, this warning can be suppressed, and the future behavior ensured, by passing a unique label to each axes instance.\n",
+      "WARNING: FITSFixedWarning: RADECSYS= 'ICRS ' / Astrometric system \n",
+      "the RADECSYS keyword is deprecated, use RADESYSa. [astropy.wcs.wcs]\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "ww :  [3494.74      3496.7258398 3498.7116796 ... 5494.4806786 5496.4665184\n",
+      " 5498.4523582]\n",
+      "sigma = 456.3 km/s\n"
+     ]
+    },
+    {
+     "data": {
+      "application/vnd.jupyter.widget-view+json": {
+       "model_id": "be72e2e0a8d5461d85ba278127886976",
+       "version_major": 2,
+       "version_minor": 0
+      },
+      "text/plain": [
+       "HBox(children=(VBox(children=(HBox(children=(Output(layout=Layout(border='light', height='200px', width='200px…"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "/Users/mxhf/.pyenv/versions/anaconda3-4.3.0/lib/python3.6/site-packages/ipykernel/__main__.py:126: MatplotlibDeprecationWarning: Adding an axes using the same arguments as a previous axes currently reuses the earlier instance.  In a future version, a new instance will always be created and returned.  Meanwhile, this warning can be suppressed, and the future behavior ensured, by passing a unique label to each axes instance.\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "ww :  [3494.74      3496.7258398 3498.7116796 ... 5494.4806786 5496.4665184\n",
+      " 5498.4523582]\n",
+      "sigma = 684.5 km/s\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "/Users/mxhf/.pyenv/versions/anaconda3-4.3.0/lib/python3.6/site-packages/ipykernel/__main__.py:126: MatplotlibDeprecationWarning: Adding an axes using the same arguments as a previous axes currently reuses the earlier instance.  In a future version, a new instance will always be created and returned.  Meanwhile, this warning can be suppressed, and the future behavior ensured, by passing a unique label to each axes instance.\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "ww :  [3494.74      3496.7258398 3498.7116796 ... 5494.4806786 5496.4665184\n",
+      " 5498.4523582]\n",
+      "sigma = 368.2 km/s\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "/Users/mxhf/.pyenv/versions/anaconda3-4.3.0/lib/python3.6/site-packages/ipykernel/__main__.py:126: MatplotlibDeprecationWarning: Adding an axes using the same arguments as a previous axes currently reuses the earlier instance.  In a future version, a new instance will always be created and returned.  Meanwhile, this warning can be suppressed, and the future behavior ensured, by passing a unique label to each axes instance.\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "ww :  [3494.74      3496.7258398 3498.7116796 ... 5494.4806786 5496.4665184\n",
+      " 5498.4523582]\n",
+      "sigma = 522.4 km/s\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "/Users/mxhf/.pyenv/versions/anaconda3-4.3.0/lib/python3.6/site-packages/ipykernel/__main__.py:126: MatplotlibDeprecationWarning: Adding an axes using the same arguments as a previous axes currently reuses the earlier instance.  In a future version, a new instance will always be created and returned.  Meanwhile, this warning can be suppressed, and the future behavior ensured, by passing a unique label to each axes instance.\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "ww :  [3494.74      3496.7258398 3498.7116796 ... 5494.4806786 5496.4665184\n",
+      " 5498.4523582]\n",
+      "sigma = 506.7 km/s\n"
+     ]
+    }
+   ],
+   "source": [
+    "import spectrum\n",
+    "\n",
+    "LOADSDSS = False\n",
+    "\n",
+    "field=\"COSMOSD\"\n",
+    "ifu=\"086\"\n",
+    "vmax = 0.6\n",
+    "x,y,z = 0.,0.,0.\n",
+    "imgscale = 1.0\n",
+    "colorcycle = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728',\n",
+    "              '#9467bd', '#8c564b', '#e377c2', '#7f7f7f',\n",
+    "              '#bcbd22', '#17becf']\n",
+    "dataroot = \"../data\"\n",
+    "fncube = \"{dataroot}/sf2outcube_{field}_{ifu}.fits.gz\".format(dataroot=dataroot,field=field,ifu=ifu)\n",
+    "fnorigcube = \"{dataroot}/outcube_{field}_{ifu}.fits.gz\".format(dataroot=dataroot,field=field,ifu=ifu)\n",
+    "fnmap = \"{dataroot}/mmap_{field}_{ifu}.fits.gz\".format(dataroot=dataroot,field=field,ifu=ifu)\n",
+    "fncatalog = \"{dataroot}/msf2outcube_{field}_allifu.cat\".format(dataroot=dataroot,field=field)\n",
+    "\n",
+    "plt.close('all')\n",
+    "\n",
+    "load_data(field, ifu, vmax, fncatalog, fncube, fnorigcube, fnmap)\n",
+    "\n",
+    "if USEDS9:\n",
+    "    ! killall ds9\n",
+    "\n",
+    "gui = mkgui()\n",
+    "\n",
+    "if USEDS9:    \n",
+    "    ds9 = startup(field, ifu, fncube, fnorigcube, fnmap, gbimages, vmax)\n",
+    "else:\n",
+    "    startup(field, ifu, fncube, fnorigcube, fnmap, gbimages, vmax)\n",
+    "\n",
+    "object_selection.options = [ \"{} {}\".format(id, cls2) for id,cls2 in zip( records[\"id\"],records[\"class2\"] ) ]\n",
+    "\n",
+    "show_next_record(no_skip=True)\n",
+    "\n",
+    "display(gui)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 44,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# TODO\n",
+    "# add contours?\n",
+    "# ann PCA version?\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Automatic pdb calling has been turned ON\n"
+     ]
+    }
+   ],
+   "source": [
+    "%pdb"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.6.8"
+  },
+  "widgets": {
+   "state": {
+    "0c53e252d3674940afbda930440eced4": {
+     "views": [
+      {
+       "cell_index": 10
+      }
+     ]
+    },
+    "101e1847473049e1bf532f0c5db9e221": {
+     "views": [
+      {
+       "cell_index": 11
+      }
+     ]
+    },
+    "126d46f25dd74f2f9c2ba745fa68239c": {
+     "views": [
+      {
+       "cell_index": 8
+      }
+     ]
+    },
+    "170c96050f5e42ee8134c2f6819fdabe": {
+     "views": [
+      {
+       "cell_index": 7
+      }
+     ]
+    },
+    "1787256362d04f57ad75e904f2ac2d19": {
+     "views": [
+      {
+       "cell_index": 10
+      }
+     ]
+    },
+    "17f57c3981c948e9a83a9ea0cbe82f30": {
+     "views": [
+      {
+       "cell_index": 7
+      }
+     ]
+    },
+    "1b86665415ed4f6ab762235ebbe413bc": {
+     "views": [
+      {
+       "cell_index": 10
+      }
+     ]
+    },
+    "1ebc8dfd02af466e92f98cdb81b59027": {
+     "views": [
+      {
+       "cell_index": 10
+      }
+     ]
+    },
+    "21cd337c24bc4112a714639999400bc8": {
+     "views": [
+      {
+       "cell_index": 10
+      }
+     ]
+    },
+    "2d2a6c24bb124c50a67bc4007c1bdf0d": {
+     "views": [
+      {
+       "cell_index": 10
+      }
+     ]
+    },
+    "2da97b2f90ce465cb018380b1dc46688": {
+     "views": [
+      {
+       "cell_index": 7
+      }
+     ]
+    },
+    "36694c71c73642a2a3adeba3f64bd6ca": {
+     "views": [
+      {
+       "cell_index": 10
+      }
+     ]
+    },
+    "37d3b947d07c40ea8124a0e9350e8857": {
+     "views": [
+      {
+       "cell_index": 11
+      }
+     ]
+    },
+    "398e9097a9914862a50d1e50eefc866c": {
+     "views": [
+      {
+       "cell_index": 8
+      }
+     ]
+    },
+    "410f52865cb4431aa4e57c48dd6b97b6": {
+     "views": [
+      {
+       "cell_index": 10
+      }
+     ]
+    },
+    "41213373f5f24ffdaad755cfc4dc9c46": {
+     "views": [
+      {
+       "cell_index": 10
+      }
+     ]
+    },
+    "43a6b8a882174f3eb77b917323d3663b": {
+     "views": [
+      {
+       "cell_index": 9
+      }
+     ]
+    },
+    "474060b8a138464884e8405561273996": {
+     "views": [
+      {
+       "cell_index": 8
+      }
+     ]
+    },
+    "4d2dae5bd23249a8adc89ce7d71f0d21": {
+     "views": [
+      {
+       "cell_index": 10
+      }
+     ]
+    },
+    "60389746af664d9e95fecd71f5419716": {
+     "views": [
+      {
+       "cell_index": 10
+      }
+     ]
+    },
+    "6a3797ac1ef246e5bc9b169db886a087": {
+     "views": [
+      {
+       "cell_index": 8
+      }
+     ]
+    },
+    "77a5183d99114310bfc5cc58b31d588b": {
+     "views": [
+      {
+       "cell_index": 10
+      }
+     ]
+    },
+    "8285ece4d96d494793b00b8ddfad3eae": {
+     "views": [
+      {
+       "cell_index": 7
+      }
+     ]
+    },
+    "942eb3a6614944f8923cf1d1f03bf28a": {
+     "views": [
+      {
+       "cell_index": 10
+      }
+     ]
+    },
+    "ad97f2b2eff84f328e2f6655e76be331": {
+     "views": [
+      {
+       "cell_index": 10
+      }
+     ]
+    },
+    "ae923326fcaa4794b00bdbc4a9ee6d7c": {
+     "views": [
+      {
+       "cell_index": 10
+      }
+     ]
+    },
+    "b10d8b2e4b3244c790bf05a0547820d6": {
+     "views": [
+      {
+       "cell_index": 10
+      }
+     ]
+    },
+    "c0dcc70acf984006b80872ed4f11d961": {
+     "views": [
+      {
+       "cell_index": 9
+      }
+     ]
+    },
+    "c586f6f45d9140f2aa5bd715f231e711": {
+     "views": [
+      {
+       "cell_index": 8
+      }
+     ]
+    },
+    "c9bfd2284bf94af785f46a629a326db2": {
+     "views": [
+      {
+       "cell_index": 7
+      }
+     ]
+    },
+    "ce9049276ed349fc85ae3404605be001": {
+     "views": [
+      {
+       "cell_index": 10
+      }
+     ]
+    },
+    "db3f82c104664523bd3db3d0695b2994": {
+     "views": [
+      {
+       "cell_index": 10
+      }
+     ]
+    },
+    "f8d4f4d0d6b9426bb246fdb98e4cfefd": {
+     "views": [
+      {
+       "cell_index": 10
+      }
+     ]
+    },
+    "fb233e7b210e44548cc76818c779c013": {
+     "views": [
+      {
+       "cell_index": 10
+      }
+     ]
+    }
+   },
+   "version": "1.2.0"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}

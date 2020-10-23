@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # This version implements a 
 # spectrally variing detection threshold.
 import time

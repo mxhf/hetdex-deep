@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import numpy as np
 import sys
 import argparse
@@ -26,7 +24,7 @@ hdu = fits.open(args.infile)
 
 # build continuum signal mask
 # compute median in spectral direction 
-m = np.nanmedian(hdu[0].data, axis=0)
+m = np.median(hdu[0].data, axis=0)
 # initial mask
 zero_mask = m == 0.
 

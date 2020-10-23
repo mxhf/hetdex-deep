@@ -1,0 +1,93 @@
+"""
+../data/COSMOSD_021.cat # issues with catalog data
+../data/COSMOSD_022.cat # done
+../data/COSMOSD_023.cat # done
+../data/COSMOSD_024.cat # done
+../data/COSMOSD_025.cat # done
+../data/COSMOSD_026.cat # done
+../data/COSMOSD_027.cat # done
+../data/COSMOSD_032.cat # done
+../data/COSMOSD_033.cat # done
+../data/COSMOSD_034.cat # done
+../data/COSMOSD_035.cat # done
+../data/COSMOSD_036.cat # done
+../data/COSMOSD_037.cat # done
+../data/COSMOSD_042.cat # done
+../data/COSMOSD_043.cat # done
+../data/COSMOSD_044.cat # done
+../data/COSMOSD_045.cat # done
+../data/COSMOSD_046.cat # done
+../data/COSMOSD_047.cat # done
+../data/COSMOSD_052.cat # done
+../data/COSMOSD_053.cat # done
+../data/COSMOSD_062.cat # done
+../data/COSMOSD_063.cat # done
+../data/COSMOSD_072.cat # done
+../data/COSMOSD_073.cat # done
+../data/COSMOSD_074.cat # done
+../data/COSMOSD_075.cat # done
+../data/COSMOSD_076.cat # done
+../data/COSMOSD_077.cat # done
+../data/COSMOSD_082.cat # done
+../data/COSMOSD_083.cat # done
+../data/COSMOSD_084.cat # done
+../data/COSMOSD_085.cat # done
+../data/COSMOSD_086.cat # done
+../data/COSMOSD_087.cat # done
+../data/COSMOSD_092.cat # done
+../data/COSMOSD_093.cat # done
+../data/COSMOSD_094.cat # done
+../data/COSMOSD_095.cat # done
+../data/COSMOSD_096.cat # done
+../data/COSMOSD_103.cat # done
+../data/COSMOSD_104.cat # done
+../data/COSMOSD_105.cat # done
+../data/COSMOSD_106.cat # done
+"""
+
+
+"""
+../data/COSMOSC_021.txt # done
+../data/COSMOSC_022.txt # done
+../data/COSMOSC_023.txt # done
+../data/COSMOSC_024.txt # done
+../data/COSMOSC_025.txt # done
+../data/COSMOSC_026.txt # done
+../data/COSMOSC_027.txt # done
+../data/COSMOSC_032.txt # done
+../data/COSMOSC_033.txt # done
+../data/COSMOSC_034.txt # done
+../data/COSMOSC_035.txt # done
+../data/COSMOSC_036.txt # done
+../data/COSMOSC_037.txt # done
+../data/COSMOSC_042.txt # done
+../data/COSMOSC_043.txt # done
+../data/COSMOSC_044.txt # done
+../data/COSMOSC_045.txt # done
+../data/COSMOSC_046.txt # done
+../data/COSMOSC_047.txt # done
+../data/COSMOSC_052.txt # done
+../data/COSMOSC_053.txt # done
+../data/COSMOSC_062.txt # done
+../data/COSMOSC_063.txt # done
+../data/COSMOSC_072.txt # done
+../data/COSMOSC_073.txt # done
+../data/COSMOSC_074.txt # done
+../data/COSMOSC_075.txt # done
+../data/COSMOSC_076.txt # done
+../data/COSMOSC_077.txt # done
+../data/COSMOSC_082.txt # done
+../data/COSMOSC_083.txt # done
+../data/COSMOSC_084.txt # done 
+../data/COSMOSC_085.txt # done 
+../data/COSMOSC_086.txt # done
+../data/COSMOSC_087.txt # done
+../data/COSMOSC_093.txt # done
+../data/COSMOSC_095.txt # done
+../data/COSMOSC_096.txt # done
+../data/COSMOSC_097.txt # done, very many objects
+../data/COSMOSC_103.txt # done
+../data/COSMOSC_104.txt # done
+../data/COSMOSC_105.txt # done
+../data/COSMOSC_106.txt # done
+"""
