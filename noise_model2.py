@@ -63,11 +63,12 @@ ll = np.zeros(c.shape[0])
 ss = np.zeros(c.shape[0])
 vv = np.zeros(c.shape[0])
 for i in range(c.shape[0]):
-    nanmask = ~ np.isnan(c[i])
-    vv[i] = np.sqrt( biweight_midvariance( c[i][smask * nanmask] ) )
-    ss[i] = np.std( c[i][smask * nanmask] )
-    mm[i] = np.mean(c[i][smask * nanmask] )
-    ll[i] = biweight_location(c[i][smask * nanmask] )
+    nanmask = np.isnan(c[i])
+
+    vv[i] = np.sqrt( biweight_midvariance( c[i][~zero_mask * ~smask * ~nanmask] ) )
+    ss[i] = np.std( c[i][~zero_mask * ~smask * ~nanmask] )
+    mm[i] = np.mean(c[i][~zero_mask * ~smask * ~nanmask] )
+    ll[i] = biweight_location(c[i][~zero_mask * ~smask * ~nanmask] )
 
 # In[63]:
 
