@@ -23,6 +23,8 @@ parser.add_argument('-o', '--output_catalog', type=str, default='',
                     help='Output catalog.')
 parser.add_argument('-c', '--calibration', type=str, default='',
                     help='Calibration.')
+parser.add_argument('-C', '--fluxconversion', type=float, default=None,
+                    help='Per count flux (alternative to --calibration) [erg/s/cm^2/A/cnt].')
 
 args = parser.parse_args(sys.argv[1:])
 
@@ -74,11 +76,21 @@ platescale = s.hdu.header["CDELT2"]
 outmap = fits.getdata(args.map)
 
 
-# load flux calibration
-ftcal = args.calibration
-tcal = ascii.read(ftcal, format="fixed_width")
-cal_interp = interpolate.interp1d(tcal["wl[A]"], tcal["cal[erg/s/cm^2/A/cnt]"], fill_value='extrapolate')
-
+if args.fluxconversion != None and args.calibration != "":
+    print("ERROR: You can't specify a flux conversion file AND a constant count to flux conversion at the same time.")
+    sys.exit(1)
+    
+if args.calibration != "":
+    # load flux calibration
+    print("Using thsi spectral response function {}".format(args.calibration))
+    ftcal = args.calibration
+    tcal = ascii.read(ftcal, format="fixed_width")
+    cal_interp = interpolate.interp1d(tcal["wl[A]"], tcal["cal[erg/s/cm^2/A/cnt]"], fill_value='extrapolate')
+elif args.fluxconversion != None:
+    print("Using constant count to flux conversion of {} erg/s/cm^2/A/cnt".format(args.fluxconversion))
+    cal_interp = interpolate.interp1d(wlgrid, [args.fluxconversion]*len(wlgrid) )
+else:
+    print("ERROR: You can specify either flux conversion file or a constant count to flux conversion.")
 
 spec_response = cal_interp(wlgrid)
 

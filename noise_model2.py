@@ -130,6 +130,9 @@ ss = []
 for i in range(c.shape[0]):
 
     subim =  c[i,int(yc-w/2):int(yc+w/2),int(xc-w/2):int(xc+w/2)]
+    
+    subim[np.isnan(subim)] = 0
+    
     M = []
     for j in range(0,w-m):
         for k in range(0,w-m):
@@ -207,10 +210,10 @@ for i,z in enumerate(zz):
         # generate random noise image (w/o) covaraince
         ns = random.normal(scale = scale, size = N)
         ns = ns.reshape(nc[0].shape)
-        # convolve with interpical covariance kernel
+        # convolve with interpixel covariance kernel
         cns = fftconvolve(ns, kernel, mode='same')
         # compute resulting standard deviation
-        s = np.std(cns)
+        s = np.nanstd(cns)
         if DEBUG:
             print("Scale {}".format(scale))
             print("sigma {}".format(s))
