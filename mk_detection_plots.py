@@ -787,14 +787,7 @@ def plot_spec(ax1, ax2, ww, csout, nsout, wldetect, jj, results, r, s, bad = [[5
     ax1.tick_params(size=5)
 
 
-    #xaxis = ax1.coords[0]
-    #yaxis = ax1.coords[1]
-    #xaxis.set_ticks_visible(False)
-    #xaxis.set_ticklabel_visible(False)
-    #yaxis.set_ticks_visible(False)
-    #yaxis.set_ticklabel_visible(False)
     ax1.set_ylabel("")
-    #ax1.set_xlabel("wl[A]")
 
     if len(results) > 0:
         ii = (results[:,1] > ww[0]) * (results[:,1] < ww[-1])
@@ -1415,7 +1408,6 @@ ax_pos["line_ident"] = [274, 237, 5, 393]
 ax_pos["NB_image"] = [218, 195, 275, 407]
 ax_pos["slice_smoothed"] = [218, 195, 526, 407]
 ax_pos["slice_unsmoothed"] = [218, 195, 786, 407]
-
 
 
 ax_pos["image0"] = [120, 120, 6, 631]
